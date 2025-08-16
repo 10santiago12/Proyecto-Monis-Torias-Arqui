@@ -1,0 +1,35 @@
+# Node dependencies
+node_modules/
+
+# Build (si compilas TypeScript a /lib o /build)
+lib/
+build/
+
+# Logs
+logs
+*.log
+firebase-debug.log*
+firebase-debug.*.log*
+
+# Firebase cache
+.firebase/
+
+# Config opcional
+# .firebaserc
+
+# Environment
+.env
+*.local
+
+# Coverage
+coverage
+.nyc_output
+
+# Lint/test caches
+.eslintcache
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
