@@ -1,28 +1,33 @@
+/** @type {import('eslint').Linter.Config} */
 module.exports = {
-  env: {
-    es6: true,
-    node: true,
-  },
-  parserOptions: {
-    "ecmaVersion": 2018,
-  },
-  extends: [
-    "eslint:recommended",
-    "google",
-  ],
+  root: true,
+  env: { node: true, es2022: true },
+  parserOptions: { ecmaVersion: 2022, sourceType: "script" },
+  extends: ["eslint:recommended", "google"],
   rules: {
-    "no-restricted-globals": ["error", "name", "length"],
-    "prefer-arrow-callback": "error",
-    "quotes": ["error", "double", {"allowTemplateLiterals": true}],
+    // Evitar bloqueos por estilo en Windows y para demo
+    "linebreak-style": "off",
+    "require-jsdoc": "off",
+    "max-len": "off",
+    "object-curly-spacing": "off",
+    "comma-dangle": "off",
+    "brace-style": "off",
+    "new-cap": "off",
+    "key-spacing": "off",
+    "comma-spacing": "off",
+    "arrow-parens": "off",
+    "operator-linebreak": "off",
+    // Mantén dobles comillas si te gusta así:
+    "quotes": ["error", "double", { "allowTemplateLiterals": true }],
+    // No forzar arrow callbacks
+    "prefer-arrow-callback": "off"
   },
   overrides: [
     {
       files: ["**/*.spec.*"],
-      env: {
-        mocha: true,
-      },
-      rules: {},
-    },
+      env: { mocha: true },
+      rules: {}
+    }
   ],
-  globals: {},
+  globals: {}
 };

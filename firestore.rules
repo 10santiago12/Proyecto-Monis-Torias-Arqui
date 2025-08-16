@@ -1,18 +1,92 @@
-rules_version='2'
+rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // Helpers
+    function isSignedIn() { return request.auth != null; }
+    function uid() { return request.auth.uid; }
+    function role() { return isSignedIn() ? (request.auth.token.role ?? "") : ""; }
+    function isAdmin() { return role() == "admin"; }
+    function isTutor() { return role() == "tutor"; }
+    function isStudent() { return role() == "student"; }
+
+    // ---- USERS ----
+    match /users/{userId} {
+      // Ver su propio perfil o cualquier perfil si es admin
+      allow read: if isSignedIn() && (userId == uid() || isAdmin());
+      // Crear/actualizar: el usuario solo puede actualizar su propio documento,
+      // sin tocar el campo "role". Admin puede todo.
+      allow create: if isSignedIn() && userId == uid();
+      allow update: if isAdmin()
+                    || (isSignedIn()
+                        && userId == uid()
+                        && !("role" in request.resource.data.diff(resource.data).changedKeys()));
+      allow delete: if isAdmin();
+    }
+
+    // ---- SESSIONS ----
+    // Doc ejemplo:
+    // { tutorId: string, studentIds: [string], type: "virtual"|"presencial"|"grupal",
+    //   price: number, currency: string, scheduledAt: string(ISO), status: "pendiente"|"confirmada"|"realizada"|"cancelada" }
+    match /sessions/{sessionId} {
+      function isTutorOfSession() { return resource.data.tutorId == uid(); }
+      function isStudentOfSession() {
+        return resource.data.studentIds != null && resource.data.studentIds.hasAny([uid()]);
+      }
+
+      // Leer: admin, tutor asignado, estudiantes de la sesión
+      allow read: if isAdmin() || (isTutor() && isTutorOfSession()) || (isStudent() && isStudentOfSession());
+
+      // Crear: admin o tutor
+      allow create: if isAdmin() || isTutor();
+
+      // Actualizar: admin o tutor de la sesión
+      // (evitar cambiar tutorId una vez creada y validar price >= 0)
+      allow update: if (isAdmin() || (isTutor() && isTutorOfSession()))
+                    && (request.resource.data.tutorId == resource.data.tutorId)
+                    && (request.resource.data.price is number && request.resource.data.price >= 0);
+
+      // Borrar: admin o tutor de la sesión
+      allow delete: if isAdmin() || (isTutor() && isTutorOfSession());
+    }
+
+    // ---- PAYMENTS ----
+    // Doc ejemplo:
+    // { sessionId: string, userId: string, amount: number, currency: string,
+    //   status: "pending"|"paid"|"failed"|"refunded", provider: "stripe"|"mp"|..., createdAt: timestamp }
+    match /payments/{paymentId} {
+      // Lectura: admin o dueño del pago
+      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == uid());
+      // Escrituras del cliente: NO. Usa Admin SDK desde Cloud Functions (salta reglas).
+      allow create, update, delete: if false;
+    }
+
+    // ---- MATERIALS ----
+    // Doc ejemplo:
+    // { sessionId: string, filename: string, storagePath: string, isLocked: bool, allowedUserIds: [string] }
+    // Recomendación: denormalizar acceso directo agregando allowedUserIds (tutor + estudiantes).
+    match /materials/{materialId} {
+      function isAllowed() {
+        return (resource.data.allowedUserIds != null && resource.data.allowedUserIds.hasAny([uid()]))
+               || isAdmin();
+      }
+
+      // Leer: solo si NO está bloqueado (pago confirmado) y el usuario está en la lista
+      allow read: if isSignedIn() && isAllowed() && resource.data.isLocked == false;
+
+      // Escribir: admin o tutor de la sesión (para registrar/actualizar metadatos).
+      // Nota: idealmente Cloud Functions crea/actualiza estos docs.
+      allow create, update: if isAdmin()
+                            || (isTutor() && request.resource.data.sessionId == resource.data.sessionId);
+
+      // Borrar: admin
+      allow delete: if isAdmin();
+    }
+
+    // ---- Por defecto: denegar todo lo que no esté contemplado
     match /{document=**} {
-      // This rule allows anyone with your database reference to view, edit,
-      // and delete all data in your database. It is useful for getting
-      // started, but it is configured to expire after 30 days because it
-      // leaves your app open to attackers. At that time, all client
-      // requests to your database will be denied.
-      //
-      // Make sure to write security rules for your app before that time, or
-      // else all client requests to your database will be denied until you
-      // update your rules.
-      allow read, write: if request.time < timestamp.date(2025, 9, 15);
+      allow read, write: if false;
     }
   }
 }
