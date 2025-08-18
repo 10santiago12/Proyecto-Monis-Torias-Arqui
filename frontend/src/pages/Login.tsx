@@ -12,10 +12,9 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isRegister, setIsRegister] = useState(false);
-  const [role, setRole] = useState("student"); // 👈 default estudiante
+  const [role, setRole] = useState("student");
   const [error, setError] = useState("");
 
-  // Mapa de rutas según rol
   const roleRoutes: Record<string, string> = {
     student: "/dashboard",
     tutor: "/tutor",
@@ -28,11 +27,9 @@ export default function LoginPage() {
 
     try {
       if (isRegister) {
-        // Crear usuario
         const cred = await createUserWithEmailAndPassword(auth, email, password);
         const uid = cred.user.uid;
 
-        // Guardar en Firestore con rol
         await setDoc(doc(db, "users", uid), {
           email,
           role,
@@ -40,19 +37,17 @@ export default function LoginPage() {
         });
 
         alert("✅ Cuenta creada con éxito");
-        navigate(roleRoutes[role] || "/dashboard"); // redirige según rol
+        navigate(roleRoutes[role] || "/dashboard");
       } else {
-        // Iniciar sesión
         const cred = await signInWithEmailAndPassword(auth, email, password);
         const uid = cred.user.uid;
 
-        // Leer rol desde Firestore
         const snap = await getDoc(doc(db, "users", uid));
         if (snap.exists()) {
           const userData = snap.data();
           navigate(roleRoutes[userData.role] || "/dashboard");
         } else {
-          navigate("/dashboard"); // fallback
+          navigate("/dashboard");
         }
       }
     } catch (err: any) {
@@ -68,62 +63,276 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-xl shadow-md w-96">
-        <h1 className="text-xl font-bold mb-6 text-center">
-          {isRegister ? "Crear cuenta" : "Iniciar sesión"}
-        </h1>
+    <div className="login-root">
+      <style>{`
+        :root {
+          --dark: #1A2E5A;
+          --mid: #2A4D8A;
+          --light: #E6F0FA;
+          --white: #FFFFFF;
+          --cta: #E0E7FF;
+          --accent: #005BBB;
+        }
 
-        {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+        html, body, #root { height: 100%; }
+        body { margin: 0; background: transparent; }
+        *, *::before, *::after { box-sizing: border-box; }
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="email"
-            placeholder="Correo"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-2 border rounded-lg"
-            required
-          />
+        .login-root {
+          min-height: 100vh;
+          display: grid;
+          place-items: center;
+          background: linear-gradient(180deg, var(--dark) 0%, var(--mid) 55%, var(--light) 100%);
+          font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+        }
 
-          <input
-            type="password"
-            placeholder="Contraseña"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-2 border rounded-lg"
-            required
-          />
+        .login-shell {
+          width: min(1100px, 92vw);
+          background: var(--white);
+          border-radius: 20px;
+          box-shadow: 0 20px 45px rgba(0,0,0,.18);
+          overflow: hidden;
+          display: grid;
+          grid-template-columns: 1.1fr 1fr;
+        }
+        @media (max-width: 900px) {
+          .login-shell { grid-template-columns: 1fr; }
+          .hero { min-height: 180px; }
+        }
 
-          {isRegister && (
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              className="w-full px-4 py-2 border rounded-lg"
-            >
-              <option value="student">Estudiante</option>
-              <option value="tutor">Tutor</option>
-              <option value="admin">Administrador</option>
-            </select>
-          )}
+        .hero {
+          background: linear-gradient(180deg, var(--dark) 0%, var(--mid) 100%);
+          color: var(--white);
+          padding: 48px 48px 48px;
+          position: relative;
+        }
+        .hero h1 {
+          font-size: 28px;
+          margin: 8px 0 4px;
+          font-weight: 800;
+          letter-spacing: .2px;
+        }
+        .hero h2 {
+          font-size: 22px;
+          margin: 16px 0 8px;
+          font-weight: 800;
+        }
+        .hero p {
+          margin: 0;
+          opacity: .9;
+          max-width: 46ch;
+          line-height: 1.45;
+        }
 
-          <button
-            type="submit"
-            className="w-full py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-          >
-            {isRegister ? "Registrarse" : "Ingresar"}
-          </button>
-        </form>
+        .brand {
+          display: flex; align-items: center; gap: 12px;
+        }
+        .brand-badge {
+          height: 42px; width: 42px; border-radius: 999px;
+          background: rgba(255,255,255,.15);
+          display: grid; place-items: center;
+          border: 1px solid rgba(255,255,255,.25);
+          font-weight: 800;
+        }
 
-        <p className="text-sm text-center mt-4">
-          {isRegister ? "¿Ya tienes cuenta?" : "¿No tienes cuenta?"}{" "}
-          <button
-            onClick={() => setIsRegister(!isRegister)}
-            className="text-blue-500 hover:underline"
-          >
-            {isRegister ? "Inicia sesión" : "Crea una cuenta"}
-          </button>
-        </p>
+        .form-pane {
+          background: var(--white);
+          padding: 40px 36px;
+          display: grid;
+          align-content: center;
+        }
+        .pane-title {
+          color: var(--dark);
+          font-size: 22px;
+          font-weight: 800;
+          margin-bottom: 8px;
+        }
+        .pane-sub {
+          color: var(--mid);
+          font-size: 13px;
+          margin-bottom: 22px;
+          text-decoration: none;
+        }
+
+        .error {
+          background: #FEF2F2;
+          border: 1px solid #FECACA;
+          color: #B91C1C;
+          padding: 10px 12px;
+          border-radius: 10px;
+          font-size: 14px;
+          margin-bottom: 14px;
+        }
+        .field { margin-bottom: 14px; }
+        .label {
+          display: block;
+          font-size: 13px;
+          color: var(--accent);
+          font-weight: 600;
+          margin-bottom: 6px;
+        }
+        .input, .select {
+          width: 100%;
+          padding: 12px 14px;
+          border: 1px solid #D6E4F5;
+          border-radius: 12px;
+          font-size: 15px;
+          outline: none;
+          transition: box-shadow .15s ease, border-color .15s ease, transform .02s ease;
+          background: #FCFDFF;
+        }
+        .input:focus, .select:focus {
+          border-color: var(--accent);
+          box-shadow: 0 0 0 3px rgba(0,91,187,.18);
+        }
+
+        .submit {
+          width: 100%;
+          padding: 12px 14px;
+          border: none;
+          border-radius: 12px;
+          font-weight: 700;
+          font-size: 15px;
+          color: var(--white);
+          background: linear-gradient(90deg, var(--mid), var(--dark));
+          cursor: pointer;
+          box-shadow: 0 10px 20px rgba(26,46,90,.25);
+          transition: transform .05s ease, filter .2s ease;
+        }
+        .submit:hover { filter: brightness(1.05); }
+        .submit:active { transform: translateY(1px); }
+
+        .switch {
+          margin-top: 12px;
+          text-align: center;
+          font-size: 14px;
+          color: #475569;
+        }
+        .link {
+          color: var(--accent);
+          font-weight: 700;
+          text-decoration: underline;
+          text-decoration-thickness: 1.5px;
+          text-underline-offset: 3px;
+          background: none;
+          border: 0;
+          cursor: pointer;
+          padding: 0 2px;
+        }
+
+        .cta {
+          margin-top: 10px;
+          width: 100%;
+          padding: 12px 14px;
+          border-radius: 12px;
+          border: 2px solid var(--accent);
+          color: var(--accent);
+          background: var(--cta);
+          font-weight: 800;
+          cursor: pointer;
+          transition: background .2s ease, transform .05s ease;
+        }
+        .cta:hover { background: #fff; }
+        .cta:active { transform: translateY(1px); }
+
+        .footer {
+          margin-top: 18px;
+          text-align: center;
+          color: var(--mid);
+          font-size: 12px;
+        }
+      `}</style>
+
+      <div className="login-shell">
+        {/* HERO */}
+        <section className="hero">
+          <div className="brand">
+            <div className="brand-badge">MT</div>
+            <div>
+              <div style={{ opacity: .85, fontSize: 12 }}>Plataforma de tutorías</div>
+              <h1>Monis-Torias</h1>
+            </div>
+          </div>
+
+          <h2>Acompañamiento académico 24/7</h2>
+          <p>
+            Accede a tutorías, agenda sesiones y potencia tu aprendizaje con una experiencia
+            simple, moderna y accesible.
+          </p>
+        </section>
+
+        {/* FORM */}
+        <section className="form-pane">
+          <div>
+            <div className="pane-title">{isRegister ? "Crear cuenta" : "Iniciar sesión"}</div>
+            <a href="#" className="pane-sub">Universidad de La Sabana</a>
+
+            {error && <div className="error">{error}</div>}
+
+            <form onSubmit={handleSubmit}>
+              <div className="field">
+                <label className="label">Correo institucional</label>
+                <input
+                  type="email"
+                  placeholder="tunombre@unisabana.edu.co"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="input"
+                />
+              </div>
+
+              <div className="field">
+                <label className="label">Contraseña</label>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="input"
+                />
+              </div>
+
+              {isRegister && (
+                <div className="field">
+                  <label className="label">Rol</label>
+                  <select
+                    value={role}
+                    onChange={(e) => setRole(e.target.value)}
+                    className="select"
+                  >
+                    <option value="student">Estudiante</option>
+                    <option value="tutor">Tutor</option>
+                    <option value="admin">Administrador</option>
+                  </select>
+                </div>
+              )}
+
+              <button type="submit" className="submit">
+                {isRegister ? "Registrarse" : "Ingresar"}
+              </button>
+            </form>
+
+            {!isRegister ? (
+              <>
+                <div className="switch">¿Aún no tienes cuenta?</div>
+                <button onClick={() => setIsRegister(true)} className="cta" aria-label="Inscríbete">
+                  Inscríbete
+                </button>
+              </>
+            ) : (
+              <div className="switch">
+                ¿Ya tienes cuenta?{" "}
+                <button onClick={() => setIsRegister(false)} className="link">
+                  Inicia sesión
+                </button>
+              </div>
+            )}
+
+            <div className="footer">© {new Date().getFullYear()} Monis-Torias — Tutorías</div>
+          </div>
+        </section>
       </div>
     </div>
   );
