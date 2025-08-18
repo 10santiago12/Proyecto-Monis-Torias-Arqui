@@ -1,3 +1,4 @@
+// src/services/api.ts
 import { auth } from "../lib/firebase";
 
 const API_URL = "https://proyecto-arqui-2c418.web.app/api";
@@ -9,31 +10,23 @@ async function request(path: string, options: RequestInit = {}) {
     Authorization: token ? `Bearer ${token}` : "",
     ...options.headers,
   };
-
   const res = await fetch(`${API_URL}${path}`, { ...options, headers });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
 
 export const api = {
-  // 🔹 Salud del backend
+  // ...lo que ya tienes
   getHealth: () => request("/health"),
-
-  // 🔹 Obtener todas las sesiones
-  getSessions: () => request("/sessions/:id"),
-
-  // 🔹 Crear nueva sesión
+  getSessions: () => request("/sessions"),
   createSession: (data: any) =>
-    request("/sessions/request", {
+    request("/sessions/request", { method: "POST", body: JSON.stringify(data) }),
+
+  // NUEVO: tutores
+  getTutors: () => request("/tutors"), // GET /api/tutors (manager)
+  assignTutorCode: (uid: string, note?: string) =>
+    request(`/tutors/${uid}/assign-code`, {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify({ note }),
     }),
-
-  // 🔹 Obtener materiales de una sesión
-  getMaterials: (sessionId: string) =>
-    request(`/materials/${sessionId}`),
-
-  // 🔹 Crear un pago de sesión
-  createPayment: (sessionId: string) =>
-    request(`/payments/${sessionId}`, { method: "POST" }),
 };
