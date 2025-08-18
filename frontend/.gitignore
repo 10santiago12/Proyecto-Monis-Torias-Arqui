@@ -12,6 +12,8 @@ dist-ssr/
 # Logs
 *.log
 
+/lib/firebase.ts
+
 # Editor
 .vscode/*
 !.vscode/extensions.json
