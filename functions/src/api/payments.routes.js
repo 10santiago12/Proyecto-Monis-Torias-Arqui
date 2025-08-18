@@ -1,24 +1,38 @@
-const { Router } = require("express");
+/**
+ * Rutas de pagos:
+ * - POST /payments/checkout -> crea intento de pago del estudiante
+ * - GET  /payments/:paymentId -> consulta estado y acredita al tutor si paid
+ */
+
+const express = require("express");
+const { z } = require("zod");
 const { PaymentsService } = require("../services/payments.service");
 
-const router = Router();
-const svc = new PaymentsService();
+const router = express.Router();
+const service = new PaymentsService();
 
-// Crea intento de pago (retorna URL mock por ahora)
-router.post("/checkout", async (req, res, next) => {
-  try {
-    const { sessionId } = req.body;
-    const result = await svc.createCheckout(req.user, sessionId);
-    res.status(201).json(result); // { url, paymentId }
-  } catch (e) {next(e);}
+const checkoutSchema = z.object({
+  sessionId: z.string().min(1),
 });
 
-// Obtiene estado de un pago
+router.post("/checkout", async (req, res, next) => {
+  try {
+    const { sessionId } = checkoutSchema.parse(req.body);
+    const result = await service.createCheckout(req.user, sessionId);
+    return res.status(201).json(result);
+  } catch (err) {
+    return next(err);
+  }
+});
+
 router.get("/:paymentId", async (req, res, next) => {
   try {
-    const data = await svc.getStatus(req.user, req.params.paymentId);
-    res.json(data);
-  } catch (e) {next(e);}
+    const { paymentId } = req.params;
+    const status = await service.getStatus(req.user, paymentId);
+    return res.json(status);
+  } catch (err) {
+    return next(err);
+  }
 });
 
 module.exports = router;

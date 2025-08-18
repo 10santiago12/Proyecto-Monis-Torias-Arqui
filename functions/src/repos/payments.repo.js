@@ -1,44 +1,34 @@
-const { admin, db } = require("../firebase");
+/**
+ * PaymentsRepo
+ * Registra intentos de pago y su estado.
+ * Ahora guarda también tutorId para poder acreditar earnings.
+ */
+
+const admin = require("firebase-admin");
+const db = admin.firestore();
+const COL = "payments";
 
 class PaymentsRepo {
-  constructor() {
-    this.col = db.collection("payments");
-  }
-
   async create(data) {
-    const now = admin.firestore.FieldValue.serverTimestamp();
-    const ref = await this.col.add({
-      ...data,
-      status: data?.status || "pending",
-      createdAt: now,
-      updatedAt: now,
-    });
-    return { id: ref.id };
+    // data: {sessionId,tutorId,userId,amount,currency,provider,
+    //        paymentId,direction,status,createdAt}
+    const ref = await db.collection(COL).add(data);
+    return { id: ref.id, ...data };
   }
 
-  async get(id) {
-    const snap = await this.col.doc(id).get();
-    if (!snap.exists) return null;
-    return { id, ...snap.data() };
-  }
-
-  async setStatus(id, status, extra = {}) {
-    const now = admin.firestore.FieldValue.serverTimestamp();
-    await this.col
-        .doc(id)
-        .set({ status, updatedAt: now, ...extra }, { merge: true });
-    return this.get(id);
-  }
-
-  // Buscar por el ID de pago que devuelve el proveedor (mock/stripe/mp)
-  async getByProviderId(providerPaymentId) {
-    const qs = await this.col
-        .where("paymentId", "==", providerPaymentId)
-        .limit(1)
-        .get();
+  async getByProviderId(paymentId) {
+    const qs = await db.collection(COL)
+      .where("paymentId", "==", paymentId).limit(1).get();
     if (qs.empty) return null;
-    const doc = qs.docs[0];
-    return { id: doc.id, ...doc.data() };
+    const d = qs.docs[0];
+    return { id: d.id, ...d.data() };
+  }
+
+  async markStatus(id, status) {
+    await db.collection(COL).doc(id).update({
+      status,
+      updatedAt: new Date().toISOString(),
+    });
   }
 }
 

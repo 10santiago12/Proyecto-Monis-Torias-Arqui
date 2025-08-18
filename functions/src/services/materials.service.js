@@ -1,45 +1,47 @@
-const admin = require("firebase-admin");
-const { v4: uuidv4 } = require("uuid"); // npm i uuid (en functions)
+/**
+ * MaterialsService
+ * Ahora los materiales NO se bloquean por pago. Cualquier usuario
+ * autenticado puede listarlos/descargarlos.
+ *
+ * SRP: solo gestiona materiales.
+ * OCP: si mañana quieres "visibilidad por curso", se extiende sin
+ * tocar pagos.
+ */
+
+const { MaterialsRepo } = require("../repos/materials.repo");
 
 class MaterialsService {
-  constructor() {
-    this.bucket = admin.storage().bucket(); // usa el bucket del proyecto
+  constructor({ materialsRepo = new MaterialsRepo() } = {}) {
+    this.repo = materialsRepo;
   }
 
-  async getUploadUrl(user, { sessionId, filename, contentType = "application/octet-stream" }) {
-    // Registra el material y genera nombre físico
-    const filePath = `materials/${sessionId}/${uuidv4()}-${filename}`;
-    const file = this.bucket.file(filePath);
-
-    // URL firmada de subida (PUT) por 15 min
-    const [uploadUrl] = await file.getSignedUrl({
-      version: "v4",
-      action: "write",
-      expires: Date.now() + 15 * 60 * 1000,
-      contentType
+  /**
+   * Registra metadata de un material y devuelve un uploadUrl (mock).
+   * @param {{uid:string}} user
+   * @param {{sessionId:string,filename:string}} dto
+   */
+  async requestUpload(user, dto) {
+    const { sessionId, filename } = dto;
+    const doc = await this.repo.create({
+      sessionId,
+      filename,
+      createdBy: user.uid,
+      createdAt: new Date().toISOString(),
     });
 
-    // Guarda/actualiza tu doc en Firestore
-    const saved = await this.repo.register({ sessionId, filename, storagePath: filePath });
-    return { uploadUrl, materialId: saved.id };
+    // Demo: URL mock de subida
+    const uploadUrl = `https://example.com/upload/${doc.id}`;
+    return { materialId: doc.id, uploadUrl };
   }
 
-  async getDownloadUrl(user, materialId) {
-    const material = await this.repo.get(materialId);
-    if (!material) {const e = new Error("Not found"); e.status = 404; throw e;}
-
-    // Verifica que el usuario pagó/puede ver
-    // if (!await hasPaid(user.uid, material.sessionId)) { const e = new Error("Forbidden"); e.status = 403; throw e; }
-
-    const file = this.bucket.file(material.storagePath);
-
-    // URL firmada de lectura por 15 min
-    const [downloadUrl] = await file.getSignedUrl({
-      version: "v4",
-      action: "read",
-      expires: Date.now() + 15 * 60 * 1000
-    });
-
+  /**
+   * Devuelve URL de descarga (mock). En real: URL firmada del bucket.
+   * @param {string} materialId
+   */
+  async getDownloadUrl(materialId) {
+    const m = await this.repo.getById(materialId);
+    if (!m) throw new Error("Material not found");
+    const downloadUrl = `https://example.com/download/${materialId}`;
     return { downloadUrl };
   }
 }

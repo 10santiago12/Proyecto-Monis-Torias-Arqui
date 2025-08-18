@@ -1,22 +1,38 @@
-const { Router } = require("express");
+/**
+ * Materiales: endpoints sin "lock".
+ * - POST /materials/upload-url
+ * - GET  /materials/:id/download-url
+ */
+
+const express = require("express");
+const { z } = require("zod");
 const { MaterialsService } = require("../services/materials.service");
 
-const router = Router();
-const svc = new MaterialsService();
+const router = express.Router();
+const service = new MaterialsService();
+
+const upSchema = z.object({
+  sessionId: z.string().min(1),
+  filename: z.string().min(1),
+});
 
 router.post("/upload-url", async (req, res, next) => {
   try {
-    const { sessionId, filename } = req.body;
-    const url = await svc.getUploadUrl(req.user, { sessionId, filename });
-    res.json({ uploadUrl: url });
-  } catch (e) {next(e);}
+    const dto = upSchema.parse(req.body);
+    const r = await service.requestUpload(req.user, dto);
+    return res.status(201).json(r);
+  } catch (err) {
+    return next(err);
+  }
 });
 
 router.get("/:id/download-url", async (req, res, next) => {
   try {
-    const url = await svc.getDownloadUrl(req.user, req.params.id);
-    res.json({ downloadUrl: url });
-  } catch (e) {next(e);}
+    const r = await service.getDownloadUrl(req.params.id);
+    return res.json(r);
+  } catch (err) {
+    return next(err);
+  }
 });
 
 module.exports = router;
