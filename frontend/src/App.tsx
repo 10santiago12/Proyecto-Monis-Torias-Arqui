@@ -1,12 +1,16 @@
 import { Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
-import Reservas from "./pages/Dashboard";
+import Dashboard from "./pages/Dashboard";
+import RequestSession from "./pages/RequestSession";
+import MyRequests from "./pages/MyRequests";
 
 function App() {
   return (
     <Routes>
       <Route path="/" element={<Login />} />
-      <Route path="/reservas" element={<Reservas />} />
+      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/request-session" element={<RequestSession />} />
+      <Route path="/my-requests" element={<MyRequests />} />
     </Routes>
   );
 }

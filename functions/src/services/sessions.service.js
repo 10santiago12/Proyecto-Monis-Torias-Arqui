@@ -2,18 +2,18 @@ const {SessionsRepo}=require("../repos/sessions.repo");
 const {TutorsRepo}=require("../repos/tutors.repo");
 const {NotificationsService}=require("./support/notifications.service");
 
-class SessionsService{
+class SessionsService {
   constructor({sessionsRepo=new SessionsRepo(),tutorsRepo=new TutorsRepo(),
-    notifications=new NotificationsService()}={}){
+    notifications=new NotificationsService()}={}) {
     this.sessions=sessionsRepo;
     this.tutors=tutorsRepo;
     this.notifications=notifications;
   }
 
-  async requestSession(user,dto){
+  async requestSession(user,dto) {
     // dto:{tutorCode,topic,description,durationMin,preferredAt,currency,price,hourlyRate}
     const tutor=await this.tutors.getByCode(dto.tutorCode);
-    if(!tutor){throw new Error("Tutor code not found");}
+    if (!tutor) {throw new Error("Tutor code not found");}
     const data={
       status:"requested",
       studentId:user.uid,
@@ -37,14 +37,14 @@ class SessionsService{
     return s;
   }
 
-  async confirmByTutor(user,sessionId,{scheduledAt}){
+  async confirmByTutor(user,sessionId,{scheduledAt}) {
     const s=await this.sessions.getById(sessionId);
-    if(!s)throw new Error("Session not found");
+    if (!s) throw new Error("Session not found");
     // tutor puede confirmar si es dueño del código/uid
-    if(s.tutorId&&s.tutorId!==user.uid){
+    if (s.tutorId&&s.tutorId!==user.uid) {
       throw new Error("Not your session");
     }
-    if(s.status!=="requested"){
+    if (s.status!=="requested") {
       throw new Error("Session not in requested state");
     }
     const upd={status:"confirmed",scheduledAt:scheduledAt,
@@ -53,17 +53,17 @@ class SessionsService{
     return {...s,...upd,id:sessionId};
   }
 
-  async markDoneByStudent(user,sessionId){
+  async markDoneByStudent(user,sessionId) {
     const s=await this.sessions.getById(sessionId);
-    if(!s)throw new Error("Session not found");
-    if(s.studentId!==user.uid){throw new Error("Not your session");}
-    if(s.status!=="confirmed"){throw new Error("Session not confirmed");}
+    if (!s) throw new Error("Session not found");
+    if (s.studentId!==user.uid) {throw new Error("Not your session");}
+    if (s.status!=="confirmed") {throw new Error("Session not confirmed");}
     const upd={status:"done",doneAt:new Date().toISOString()};
     await this.sessions.update(sessionId,upd);
     return {...s,...upd,id:sessionId};
   }
 
-  async getById(id){return this.sessions.getById(id);}
+  async getById(id) {return this.sessions.getById(id);}
 }
 
 module.exports={SessionsService};

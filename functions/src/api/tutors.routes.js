@@ -10,12 +10,12 @@ const codeSchema=z.object({
   note:z.string().default(""),
 });
 
-router.post("/codes",requireRoles("manager"),async(req,res,next)=>{
-  try{
+router.post("/codes",requireRoles("manager"),async (req,res,next)=>{
+  try {
     const {note}=codeSchema.parse(req.body);
     const r=await service.createTutorCode(req.user.uid,note);
     return res.status(201).json(r);
-  }catch(e){return next(e);}
+  } catch (e) {return next(e);}
 });
 
 module.exports=router;

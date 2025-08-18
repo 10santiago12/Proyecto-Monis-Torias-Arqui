@@ -1,17 +1,17 @@
 const {EarningsRepo}=require("../../repos/earnings.repo");
 
-class EarningsService{
-  constructor({earningsRepo=new EarningsRepo(),feePct=0.1}={}){
+class EarningsService {
+  constructor({earningsRepo=new EarningsRepo(),feePct=0.1}={}) {
     this.earnings=earningsRepo;
     this.feePct=feePct;
   }
 
   // desde payout aprobado del manager
-  async creditFromPayout(p){
+  async creditFromPayout(p) {
     // p:{id,sessionId,tutorId,amount,currency,type:'payout'}
-    if(!p.tutorId)throw new Error("Missing tutorId");
+    if (!p.tutorId) throw new Error("Missing tutorId");
     const exists=await this.earnings.getByPaymentId(p.id);
-    if(exists)return exists;
+    if (exists) return exists;
     const fee=Math.round(p.amount*this.feePct);
     const net=Math.max(0,p.amount-fee);
     return this.earnings.create({

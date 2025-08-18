@@ -12,7 +12,7 @@ const materialsRoutes=require("./api/materials.routes");
 const usersRoutes=require("./api/users.routes");
 const tutorsRoutes=require("./api/tutors.routes");
 
-if(!admin.apps.length){admin.initializeApp();}
+if (!admin.apps.length) {admin.initializeApp();}
 
 const app=express();
 app.use(cors({origin:true}));
