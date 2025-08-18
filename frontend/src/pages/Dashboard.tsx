@@ -62,7 +62,7 @@ export default function Dashboard() {
           {/* ✅ Botón único, fuera del map */}
           <div className="header-cta">
             <Link to="/request-session" className="btn-primary">
-              ➕ Crear sesión
+               Crear sesión
             </Link>
           </div>
         </header>
