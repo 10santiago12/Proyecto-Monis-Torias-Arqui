@@ -3,8 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../services/api";
 
 export default function RequestSession() {
-  const [title, setTitle] = useState("");
+  const [tutorCode, setTutorCode] = useState("");
+  const [topic, setTopic] = useState("");
   const [description, setDescription] = useState("");
+  const [durationMin, setDurationMin] = useState(60); // por defecto 60 min
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -15,7 +17,15 @@ export default function RequestSession() {
     setError("");
 
     try {
-      await api.createSession({ title, description });
+      // payload que espera el backend (sessions.service)
+      const payload = {
+        tutorCode,
+        topic,
+        description,
+        durationMin: Number(durationMin),
+      };
+
+      await api.createSession(payload);
       alert("✅ Sesión creada con éxito");
       navigate("/dashboard"); // redirige al listado
     } catch (err: any) {
@@ -36,9 +46,18 @@ export default function RequestSession() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="text"
-            placeholder="Título"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Código del tutor"
+            value={tutorCode}
+            onChange={(e) => setTutorCode(e.target.value)}
+            className="w-full px-4 py-2 border rounded-lg"
+            required
+          />
+
+          <input
+            type="text"
+            placeholder="Tema (ej: Matemáticas, Álgebra...)"
+            value={topic}
+            onChange={(e) => setTopic(e.target.value)}
             className="w-full px-4 py-2 border rounded-lg"
             required
           />
@@ -50,6 +69,16 @@ export default function RequestSession() {
             className="w-full px-4 py-2 border rounded-lg"
             rows={3}
             required
+          />
+
+          <input
+            type="number"
+            placeholder="Duración (minutos)"
+            value={durationMin}
+            onChange={(e) => setDurationMin(Number(e.target.value))}
+            className="w-full px-4 py-2 border rounded-lg"
+            required
+            min={15}
           />
 
           <button

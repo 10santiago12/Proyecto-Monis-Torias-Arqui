@@ -16,12 +16,24 @@ async function request(path: string, options: RequestInit = {}) {
 }
 
 export const api = {
+  // 🔹 Salud del backend
   getHealth: () => request("/health"),
 
-  getSessions: () => request("/sessions"),
+  // 🔹 Obtener todas las sesiones
+  getSessions: () => request("/sessions/:id"),
 
-  createSession: (data: any) => request("/sessions/request", {
-    method: "POST",
-    body: JSON.stringify(data),
-  }),
+  // 🔹 Crear nueva sesión
+  createSession: (data: any) =>
+    request("/sessions/request", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  // 🔹 Obtener materiales de una sesión
+  getMaterials: (sessionId: string) =>
+    request(`/materials/${sessionId}`),
+
+  // 🔹 Crear un pago de sesión
+  createPayment: (sessionId: string) =>
+    request(`/payments/${sessionId}`, { method: "POST" }),
 };

@@ -1,6 +1,6 @@
 const {SessionsRepo}=require("../repos/sessions.repo");
 const {TutorsRepo}=require("../repos/tutors.repo");
-const {NotificationsService}=require("./support/notifications.service");
+const {NotificationsService}=require("./notifications.service");
 
 class SessionsService {
   constructor({sessionsRepo=new SessionsRepo(),tutorsRepo=new TutorsRepo(),
