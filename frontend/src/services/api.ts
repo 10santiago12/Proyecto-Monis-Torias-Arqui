@@ -20,30 +20,8 @@ export const api = {
 
   getSessions: () => request("/sessions"),
 
-  requestSession: (data: {
-    tutorCode: string;
-    topic: string;
-    description?: string;
-    durationMin: number;
-    preferredAt?: string;
-  }) =>
-    request("/sessions/request", {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
-
-  getMyRequests: () => request("/sessions/my"),
-
-  reserveSession: (sessionId: string) =>
-    request(`/sessions/${sessionId}/reserve`, {
-      method: "POST",
-    }),
-
-  createPayment: (sessionId: string) =>
-    request("/payments/checkout", {
-      method: "POST",
-      body: JSON.stringify({ sessionId }),
-    }),
-
-  getMaterials: (sessionId: string) => request(`/materials/${sessionId}`),
+  createSession: (data: any) => request("/sessions/request", {
+    method: "POST",
+    body: JSON.stringify(data),
+  }),
 };
