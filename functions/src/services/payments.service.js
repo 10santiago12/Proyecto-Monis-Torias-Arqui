@@ -1,120 +1,67 @@
-/**
- * PaymentsService
- * Orquesta el cobro al estudiante (checkout) y, cuando el proveedor
- * confirma "paid", acredita el ingreso al tutor (earnings).
- *
- * SOLID:
- * - SRP: esta clase solo coordina pagos y delega a repos/adapters.
- * - OCP: el adapter de pagos se inyecta (Mock, Stripe, etc.).
- * Patrón:
- * - Adapter: PaymentAdapterMock (interfaz estable) para proveedores.
- */
+const {PaymentsRepo}=require("../repos/payments.repo");
+const {SessionsRepo}=require("../repos/sessions.repo");
+const {EarningsService}=require("./payouts/earnings.service");
 
-const { PaymentsRepo } = require("../repos/payments.repo");
-const { SessionsRepo } = require("../repos/sessions.repo");
-const { EarningsService } = require("./payouts/earnings.service");
-const { PaymentAdapterMock } =
-  require("../adapters/payment.adapter.mock");
-
-class PaymentsService {
-  constructor({
-    paymentsRepo = new PaymentsRepo(),
-    sessionsRepo = new SessionsRepo(),
-    earningsService = new EarningsService(),
-    adapter = new PaymentAdapterMock(),
-  } = {}) {
-    this.payments = paymentsRepo;
-    this.sessions = sessionsRepo;
-    this.earnings = earningsService;
-    this.adapter = adapter;
+class PaymentsService{
+  constructor({paymentsRepo=new PaymentsRepo(),sessionsRepo=new SessionsRepo(),
+    earnings=new EarningsService()}={}){
+    this.payments=paymentsRepo;
+    this.sessions=sessionsRepo;
+    this.earnings=earnings;
   }
 
-  /**
-   * Crea un intento de cobro para una sesión.
-   * Calcula el monto desde la sesión (price fijo o rate*duración).
-   * @param {{uid:string}} user
-   * @param {string} sessionId
-   * @returns {{url:string,paymentId:string}}
-   */
-  async createCheckout(user, sessionId) {
-    const s = await this.sessions.getById(sessionId);
-    if (!s) {
-      throw new Error("Session not found");
-    }
-    // Regla simple: puede pagar cualquier estudiante autenticado.
-    // Si quieres restringir: valida que user.uid esté en s.studentIds.
-
-    const amount = this._calcAmountFromSession(s);
-    const currency = s.currency || "COP";
-
-    const { paymentId, url } = await this.adapter.createCheckout({
-      sessionId,
-      amount,
-      currency,
-      customerId: user.uid,
+  // TUTOR solicita pago por una sesión realizada
+  async requestPayout(user,sessionId){
+    const s=await this.sessions.getById(sessionId);
+    if(!s)throw new Error("Session not found");
+    if(s.status!=="done"){throw new Error("Session not done");}
+    // Debe ser el tutor
+    if(s.tutorId&&s.tutorId!==user.uid){throw new Error("Not your session");}
+    const amount=this._calcAmount(s);
+    const doc=await this.payments.create({
+      sessionId:s.id,
+      tutorId:s.tutorId||null,
+      requesterId:user.uid,
+      amount:amount,
+      currency:s.currency||"COP",
+      type:"payout",
+      status:"requested",
+      createdAt:new Date().toISOString(),
     });
-
-    await this.payments.create({
-      sessionId,
-      tutorId: s.tutorId,
-      userId: user.uid,
-      amount,
-      currency,
-      provider: "mock",
-      paymentId,
-      direction: "in", // dinero entra desde estudiante
-      status: "pending",
-      createdAt: new Date().toISOString(),
-    });
-
-    return { url, paymentId };
+    return doc;
   }
 
-  /**
-   * Consulta estado al proveedor. Si está "paid" y el pago aún no
-   * fue acreditado, marca paid y acredita earnings al tutor.
-   * @param {{uid:string}} _user
-   * @param {string} paymentId
-   * @returns {{paymentId:string,status:string}}
-   */
-  async getStatus(_user, paymentId) {
-    const providerStatus = await this.adapter.getStatus(paymentId);
-
-    // Idempotente: solo si pasa a paid y no estaba paid.
-    if (providerStatus.status === "paid") {
-      const p = await this.payments.getByProviderId(paymentId);
-      if (!p) {
-        throw new Error("Payment not found");
-      }
-      if (p.status !== "paid") {
-        await this.payments.markStatus(p.id, "paid");
-        // Acreditar ingreso al tutor (una sola vez por payment).
-        await this.earnings.creditFromPayment(p);
-      }
-    }
-    return providerStatus;
+  // MANAGER aprueba (todavía no marca paid)
+  async approvePayout(manager,paymentId){
+    const p=await this.payments.getById(paymentId);
+    if(!p)throw new Error("Payment not found");
+    if(p.status!=="requested"){throw new Error("Invalid state");}
+    const upd={status:"approved",approvedBy:manager.uid,
+      approvedAt:new Date().toISOString()};
+    await this.payments.update(paymentId,upd);
+    return {...p,...upd,id:paymentId};
   }
 
-  /**
-   * Obtiene monto de la sesión:
-   *  - Si s.price existe, usa ese.
-   *  - Si no, usa hourlyRate * (durationMin/60).
-   * @param {object} s
-   * @returns {number}
-   */
-  _calcAmountFromSession(s) {
-    if (typeof s.price === "number" && s.price > 0) {
-      return s.price;
-    }
-    const rate = Number(s.hourlyRate || 0);
-    const mins = Number(s.durationMin || 0);
-    const amount = Math.round((rate * mins) / 60);
-    if (!amount || amount <= 0) {
-      // Demo: fallback para no romper el flujo
-      return 50000;
-    }
-    return amount;
+  // MANAGER marca pagado y acredita earning
+  async markPaid(manager,paymentId){
+    const p=await this.payments.getById(paymentId);
+    if(!p)throw new Error("Payment not found");
+    if(p.status!=="approved"){throw new Error("Must be approved first");}
+    // Acredita earning (idempotente si reintenta)
+    await this.earnings.creditFromPayout(p);
+    const upd={status:"paid",paidBy:manager.uid,
+      paidAt:new Date().toISOString()};
+    await this.payments.update(paymentId,upd);
+    return {...p,...upd,id:paymentId};
+  }
+
+  _calcAmount(s){
+    if(typeof s.price==="number"&&s.price>0){return s.price;}
+    const rate=Number(s.hourlyRate||0);
+    const mins=Number(s.durationMin||0);
+    const val=Math.round((rate*mins)/60);
+    return val>0?val:50000;
   }
 }
 
-module.exports = { PaymentsService };
+module.exports={PaymentsService};

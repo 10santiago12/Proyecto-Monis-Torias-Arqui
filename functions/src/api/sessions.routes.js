@@ -1,46 +1,55 @@
-const { Router } = require("express");
-const { SessionsService } = require("../services/sessions.service");
-const { z } = require("zod");
+const express=require("express");
+const {z}=require("zod");
+const {SessionsService}=require("../services/sessions.service");
+const {requireRoles}=require("../middlewares/role.middleware");
 
-const router = Router();
-const svc = new SessionsService();
+const router=express.Router();
+const service=new SessionsService();
 
-const SessionDto = z.object({
-  tutorId: z.string(),
-  studentIds: z.array(z.string()).min(1),
-  type: z.enum(["virtual","presencial","grupal"]),
-  price: z.number().nonnegative(),
-  currency: z.string().default("COP"),
-  scheduledAt: z.string() // ISO
+const requestSchema=z.object({
+  tutorCode:z.string().min(4),
+  topic:z.string().min(3),
+  description:z.string().default(""),
+  durationMin:z.number().int().positive(),
+  preferredAt:z.string().optional(), // ISO opcional
+  currency:z.string().default("COP"),
+  price:z.number().int().positive().optional(),
+  hourlyRate:z.number().int().positive().optional(),
 });
 
-router.post("/", async (req, res, next) => {
-  try {
-    const dto = SessionDto.parse(req.body);
-    const created = await svc.create(req.user, dto);
-    res.status(201).json(created);
-  } catch (e) {next(e);}
+router.post("/request",async(req,res,next)=>{
+  try{
+    const dto=requestSchema.parse(req.body);
+    const r=await service.requestSession(req.user,dto);
+    return res.status(201).json(r);
+  }catch(e){return next(e);}
 });
 
-router.get("/", async (req, res, next) => {
-  try {
-    const list = await svc.list(req.user);
-    res.json(list);
-  } catch (e) {next(e);}
+const confirmSchema=z.object({
+  scheduledAt:z.string().min(10), // ISO
 });
 
-router.patch("/:id", async (req, res, next) => {
-  try {
-    const updated = await svc.update(req.user, req.params.id, req.body);
-    res.json(updated);
-  } catch (e) {next(e);}
+router.post("/:id/confirm",requireRoles("tutor"),async(req,res,next)=>{
+  try{
+    const dto=confirmSchema.parse(req.body);
+    const r=await service.confirmByTutor(req.user,req.params.id,dto);
+    return res.json(r);
+  }catch(e){return next(e);}
 });
 
-router.delete("/:id", async (req, res, next) => {
-  try {
-    await svc.cancel(req.user, req.params.id);
-    res.status(204).end();
-  } catch (e) {next(e);}
+router.post("/:id/mark-done",async(req,res,next)=>{
+  try{
+    const r=await service.markDoneByStudent(req.user,req.params.id);
+    return res.json(r);
+  }catch(e){return next(e);}
 });
 
-module.exports = router;
+router.get("/:id",async(req,res,next)=>{
+  try{
+    const s=await service.getById(req.params.id);
+    if(!s)return res.status(404).json({message:"Not found"});
+    return res.json(s);
+  }catch(e){return next(e);}
+});
+
+module.exports=router;

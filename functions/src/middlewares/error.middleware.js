@@ -1,7 +1,7 @@
-function errorMiddleware(err, _req, res, _next) {
-  console.error(err);
-  const status = err.status || 500;
-  res.status(status).json({error: err.message || "Internal error"});
+function errorMiddleware(err,_req,res,_next){
+  const status=err.statusCode||400;
+  const message=err.message||"Error";
+  return res.status(status).json({message});
 }
 
-module.exports = { errorMiddleware };
+module.exports={errorMiddleware};
