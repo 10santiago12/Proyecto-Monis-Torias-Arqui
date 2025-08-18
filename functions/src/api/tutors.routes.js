@@ -1,21 +1,35 @@
-const express=require("express");
-const {z}=require("zod");
-const {TutorsService}=require("../services/tutors.service");
-const {requireRoles}=require("../middlewares/role.middleware");
+// functions/src/api/tutors.routes.js
+const express = require("express");
+const { z } = require("zod");
+const { requireRoles } = require("../middlewares/role.middleware");
+const { TutorsService } = require("../services/tutors.service");
 
-const router=express.Router();
-const service=new TutorsService();
+const router = express.Router();
+const service = new TutorsService();
 
-const codeSchema=z.object({
-  note:z.string().default(""),
-});
-
-router.post("/codes",requireRoles("manager"),async (req,res,next)=>{
+// Listar todos los tutores
+router.get("/", requireRoles("manager"), async (req, res, next) => {
   try {
-    const {note}=codeSchema.parse(req.body);
-    const r=await service.createTutorCode(req.user.uid,note);
-    return res.status(201).json(r);
-  } catch (e) {return next(e);}
+    const list = await service.listAllTutors();
+    return res.json(list);
+  } catch (e) {
+    return next(e);
+  }
 });
 
-module.exports=router;
+// Asignar código a un tutor específico
+const assignSchema = z.object({
+  note: z.string().optional(),
+});
+router.post("/:uid/assign-code", requireRoles("manager"), async (req, res, next) => {
+  try {
+    const { note } = assignSchema.parse(req.body || {});
+    const { uid } = req.params;
+    const r = await service.assignCodeToTutor(req.user.uid, uid, note);
+    return res.json(r);
+  } catch (e) {
+    return next(e);
+  }
+});
+
+module.exports = router;
