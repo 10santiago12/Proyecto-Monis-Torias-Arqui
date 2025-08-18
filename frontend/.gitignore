@@ -12,7 +12,7 @@ dist-ssr/
 # Logs
 *.log
 
-/lib/firebase.ts
+lib/firebase.ts
 
 # Editor
 .vscode/*
