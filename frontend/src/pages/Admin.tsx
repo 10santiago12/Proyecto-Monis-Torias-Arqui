@@ -1,5 +1,6 @@
 // src/pages/Admin.tsx
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom"; // 👈 agregado
 import { api } from "../services/api";
 
 type Tutor = {
@@ -15,6 +16,8 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [assigning, setAssigning] = useState<string | null>(null);
   const [error, setError] = useState("");
+
+  const navigate = useNavigate(); // 👈 inicializado
 
   const load = async () => {
     setError("");
@@ -98,9 +101,18 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <button onClick={load} className="btn-secondary">
-            Recargar
-          </button>
+          <div style={{ display: "flex", gap: "8px" }}>
+            <button onClick={load} className="btn-secondary">
+              Recargar
+            </button>
+            {/* 👇 Botón Cerrar sesión en rojo */}
+            <button
+              onClick={() => navigate("/")}
+              className="btn-logout"
+            >
+              Cerrar sesión
+            </button>
+          </div>
         </header>
 
         {/* Subheader */}
@@ -205,6 +217,14 @@ html,body,#root{height:100%} body{margin:0;background:transparent}
 .btn-secondary:hover{filter:brightness(1.03)}
 .btn-secondary:active{transform:translateY(1px)}
 .btn-secondary:disabled{opacity:.6;cursor:not-allowed}
+
+/* Botón Logout en rojo */
+.btn-logout{
+  padding:10px 14px;border-radius:12px;border:1px solid #fecaca;background:#fee2e2;
+  color:#b91c1c;font-weight:700;cursor:pointer;transition:filter .2s ease, transform .05s ease;
+}
+.btn-logout:hover{filter:brightness(1.05)}
+.btn-logout:active{transform:translateY(1px)}
 
 /* Subheader */
 .subheader{padding:20px 22px 10px}

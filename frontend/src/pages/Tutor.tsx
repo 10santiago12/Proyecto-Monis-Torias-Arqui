@@ -1,4 +1,27 @@
+import { useNavigate } from "react-router-dom";
+
 export default function TutorDashboard() {
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      // TODO: llama aquí tu servicio real de logout si aplica (Firebase/Supabase/tu API)
+      // Ejemplos:
+      // await signOut(auth);
+      // await api.auth.logout();
+
+      // Limpieza local básica
+      localStorage.removeItem("token");
+      sessionStorage.clear();
+
+      alert("Has cerrado sesión ✅");
+      navigate("/"); // 👉 redirige a la raíz
+    } catch (err) {
+      console.error(err);
+      alert("No se pudo cerrar sesión. Inténtalo de nuevo.");
+    }
+  };
+
   return (
     <div className="tutor-root">
       <style>{styles}</style>
@@ -13,9 +36,14 @@ export default function TutorDashboard() {
               <h1 className="brand-title">Monis-Torias</h1>
             </div>
           </div>
+
+          {/* Botón Logout */}
+          <button className="btn-logout" type="button" onClick={handleLogout}>
+            Cerrar sesión
+          </button>
         </header>
 
-        {/* Subheader (mantengo tu texto original) */}
+        {/* Subheader */}
         <section className="subheader">
           <h2 className="page-title">Panel de Tutor</h2>
           <p className="page-sub">
@@ -23,7 +51,7 @@ export default function TutorDashboard() {
           </p>
         </section>
 
-        {/* Contenido visual (solo diseño, sin lógica nueva) */}
+        {/* Contenido visual */}
         <section className="grid">
           {/* Próximas sesiones */}
           <div className="card card-span2">
@@ -66,7 +94,7 @@ export default function TutorDashboard() {
   );
 }
 
-/* ------------------- ESTILOS (sin Tailwind) ------------------- */
+/* ------------------- ESTILOS ------------------- */
 const styles = `
 :root{
   --dark:#1A2E5A; --mid:#2A4D8A; --light:#E6F0FA; --white:#FFFFFF; --cta:#E0E7FF; --accent:#005BBB;
@@ -97,6 +125,16 @@ html,body,#root{height:100%} body{margin:0;background:transparent}
 .brand-text{line-height:1.1}
 .brand-kicker{font-size:12px; color:#475569}
 .brand-title{margin:0; font-size:18px; color:var(--dark); font-weight:800; letter-spacing:.2px}
+
+/* Botón Logout */
+.btn-logout{
+  padding:10px 16px; border-radius:12px; border:none;
+  background:linear-gradient(90deg,#ef4444,#dc2626);
+  color:white; font-weight:700; cursor:pointer;
+  transition:filter .2s ease, transform .05s ease;
+}
+.btn-logout:hover{filter:brightness(1.05)}
+.btn-logout:active{transform:translateY(1px)}
 
 /* Subheader */
 .subheader{padding:20px 22px 6px}

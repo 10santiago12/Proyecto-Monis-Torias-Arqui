@@ -1,10 +1,12 @@
+// src/pages/Dashboard.tsx
 import { useEffect, useState } from "react";
 import { api } from "../services/api";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function Dashboard() {
   const [sessions, setSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate(); // para redirigir a "/"
 
   useEffect(() => {
     api
@@ -30,6 +32,14 @@ export default function Dashboard() {
               <Link to="/request-session" className="btn-primary disabled">
                 ➕ Crear sesión
               </Link>
+              {/* Botón Cerrar sesión (rojo) */}
+              <button
+                onClick={() => navigate("/")}
+                className="btn-logout"
+                type="button"
+              >
+                Cerrar sesión
+              </button>
             </div>
           </header>
           <div className="content">
@@ -64,6 +74,14 @@ export default function Dashboard() {
             <Link to="/request-session" className="btn-primary">
                Crear sesión
             </Link>
+            {/* Botón Cerrar sesión (rojo) */}
+            <button
+              onClick={() => navigate("/")}
+              className="btn-logout"
+              type="button"
+            >
+              Cerrar sesión
+            </button>
           </div>
         </header>
 
@@ -133,6 +151,14 @@ html,body,#root{height:100%} body{margin:0; background:transparent}
 .btn-primary:hover{filter:brightness(1.05)}
 .btn-primary:active{transform:translateY(1px)}
 .btn-primary.disabled{opacity:.6; pointer-events:none}
+
+/* Botón Cerrar sesión en rojo */
+.btn-logout{
+  padding:10px 14px; border-radius:12px; border:1px solid #fecaca; background:#fee2e2;
+  color:#b91c1c; font-weight:700; cursor:pointer; transition:filter .2s ease, transform .05s ease;
+}
+.btn-logout:hover{filter:brightness(1.05)}
+.btn-logout:active{transform:translateY(1px)}
 
 .subheader{padding:20px 22px 10px}
 .page-title{margin:0 0 4px; font-size:22px; color:#0f172a; font-weight:800}
