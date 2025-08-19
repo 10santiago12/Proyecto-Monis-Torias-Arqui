@@ -1,11 +1,11 @@
 # Proyecto-Monitorias-Arqui
 Proyecto para Diseño y Arquitectura de Software Corte 1
 
-Integrantes:
+# Integrantes:
 
-Luis Mario Ramírez Muñoz
-Santiago Gutiérrez de Piñeres Barbosa
-Santiago Urrego Rodríguez
+### Luis Mario Ramírez Muñoz
+### Santiago Gutiérrez de Piñeres Barbosa
+### Santiago Urrego Rodríguez
 
 ## Wiki
 
