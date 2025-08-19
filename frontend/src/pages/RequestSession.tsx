@@ -124,6 +124,15 @@ export default function RequestSession() {
             <button type="submit" disabled={loading} className={`btn-primary ${loading ? "btn-disabled" : ""}`}>
               {loading ? "Creando..." : "Crear sesión"}
             </button>
+
+            {/* ← Botón para volver al Dashboard (no altera tu flujo) */}
+            <button
+              type="button"
+              onClick={() => navigate("/dashboard")}
+              className="btn-secondary btn-block"
+            >
+              ← Volver al Dashboard
+            </button>
           </form>
         </section>
       </div>
@@ -201,7 +210,7 @@ html,body,#root{height:100%} body{margin:0;background:transparent}
   background:#FEF2F2; border:1px solid #FECACA; color:#B91C1C; font-weight:600; font-size:14px;
 }
 
-/* Button */
+/* Buttons */
 .btn-primary{
   width:100%; padding:12px 14px; border-radius:12px; color:#fff; border:none; cursor:pointer;
   background:linear-gradient(90deg,var(--mid),var(--dark));
@@ -211,4 +220,13 @@ html,body,#root{height:100%} body{margin:0;background:transparent}
 .btn-primary:hover{filter:brightness(1.05)}
 .btn-primary:active{transform:translateY(1px)}
 .btn-disabled{opacity:.6; cursor:not-allowed}
+
+/* Nuevo: botón secundario para volver */
+.btn-secondary{
+  padding:12px 14px; border-radius:12px; border:1px solid #dbe7f8; background:#f7faff; color:#0f172a;
+  font-weight:700; cursor:pointer; transition:filter .2s ease, transform .05s ease;
+}
+.btn-secondary:hover{filter:brightness(1.03)}
+.btn-secondary:active{transform:translateY(1px)}
+.btn-block{width:100%; margin-top:10px}
 `;
