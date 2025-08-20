@@ -1,12 +1,12 @@
-// src/pages/Admin.tsx
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom"; // 👈 agregado
+import { useNavigate } from "react-router-dom";
 import { api } from "../services/api";
+import { useAuth } from "../hooks/useAuth";
 
 type Tutor = {
   id: string;         // uid del tutor
   displayName?: string;
-  email?: string;     // 👈 si tu backend lo envía, lo tomamos directo
+  email?: string;
   code?: string;      // código de 4 dígitos si ya lo tiene
   role?: string;      // "tutor"
 };
@@ -17,7 +17,8 @@ export default function AdminPage() {
   const [assigning, setAssigning] = useState<string | null>(null);
   const [error, setError] = useState("");
 
-  const navigate = useNavigate(); // 👈 inicializado
+  const navigate = useNavigate();
+  const { logout } = useAuth();
 
   const load = async () => {
     setError("");
@@ -42,7 +43,6 @@ export default function AdminPage() {
     setAssigning(uid);
     try {
       const { code } = await api.assignTutorCode(uid);
-      // Refrescar en memoria el tutor al que asignamos
       setTutors((prev) =>
         prev.map((t) => (t.id === uid ? { ...t, code } : t))
       );
@@ -55,7 +55,6 @@ export default function AdminPage() {
     }
   };
 
-  // 🔎 Obtiene el correo desde varias rutas posibles (según cómo venga del backend).
   const getEmail = (t: any): string => {
     return (
       t?.email ||
@@ -71,7 +70,6 @@ export default function AdminPage() {
     );
   };
 
-  // Iniciales para el avatar basadas en el correo si existe; si no, displayName; si no, uid.
   const getInitials = (t: any): string => {
     const email = getEmail(t);
     const base =
@@ -135,8 +133,13 @@ export default function AdminPage() {
             <button onClick={load} className="btn-secondary">
               Recargar
             </button>
-            {/* 👇 Botón Cerrar sesión (solo navega al inicio) */}
-            <button onClick={() => navigate("/")} className="btn-logout">
+            <button
+              onClick={async () => {
+                await logout();
+                navigate("/", { replace: true });
+              }}
+              className="btn-logout"
+            >
               Cerrar sesión
             </button>
           </div>
@@ -170,7 +173,6 @@ export default function AdminPage() {
                   <div className="card-left">
                     <div className="avatar">{initials}</div>
                     <div className="meta">
-                      {/* 👇 Mostrar correo (o guion). Nunca mostrar UID */}
                       <p className="name">{email}</p>
                       <p className="email">{email}</p>
                       <p className="row">

@@ -1,6 +1,6 @@
-// src/pages/Tutor.tsx
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 import { api } from "../services/api";
 
 type MaybeTimestamp =
@@ -27,6 +27,8 @@ type Session = {
 
 export default function TutorDashboard() {
   const navigate = useNavigate();
+  const { logout } = useAuth();
+
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState("");
@@ -52,7 +54,7 @@ export default function TutorDashboard() {
     if (!iso) return NaN;
     const t = new Date(iso).getTime();
     return isNaN(t) ? NaN : t;
-    };
+  };
   const fmt = (v: MaybeTimestamp) => {
     const iso = toISO(v);
     if (!iso) return "Por agendar";
@@ -60,7 +62,7 @@ export default function TutorDashboard() {
     if (isNaN(d.getTime())) return "Fecha inválida";
     return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(d);
   };
-  // ISO -> "YYYY-MM-DDTHH:mm" (valor de <input type="datetime-local">)
+  // ISO -> "YYYY-MM-DDTHH:mm"
   const isoToLocalInput = (iso?: string) => {
     if (!iso) return "";
     const d = new Date(iso);
@@ -76,7 +78,7 @@ export default function TutorDashboard() {
   // "YYYY-MM-DDTHH:mm" -> ISO
   const localInputToISO = (v: string) => {
     if (!v) return "";
-    const d = new Date(v); // interpreta en zona local
+    const d = new Date(v);
     return isNaN(d.getTime()) ? "" : d.toISOString();
   };
 
@@ -87,7 +89,7 @@ export default function TutorDashboard() {
       setLoading(true);
       const list = await api.getSessions();
       setSessions(Array.isArray(list) ? list : []);
-      // Prefill inputs con preferredAt si existe (o ahora + 1h)
+      // Prefill inputs
       const prefill: Record<string, string> = {};
       (Array.isArray(list) ? list : []).forEach((s: Session) => {
         if (s.status === "requested") {
@@ -131,19 +133,6 @@ export default function TutorDashboard() {
     [sessions]
   );
 
-  const handleLogout = async () => {
-    try {
-      // TODO: signOut(auth) si usas Firebase
-      localStorage.removeItem("token");
-      sessionStorage.clear();
-      alert("Has cerrado sesión ✅");
-      navigate("/");
-    } catch (err) {
-      console.error(err);
-      alert("No se pudo cerrar sesión. Inténtalo de nuevo.");
-    }
-  };
-
   const handleChangeDate = (id: string, v: string) => {
     setSchedule((prev) => ({ ...prev, [id]: v }));
   };
@@ -159,7 +148,6 @@ export default function TutorDashboard() {
     try {
       setSavingId(id);
       await api.confirmSession(id, iso);
-      // Actualizar estado local
       setSessions((prev) =>
         prev.map((s) =>
           s.id === id
@@ -167,7 +155,6 @@ export default function TutorDashboard() {
             : s
         )
       );
-      alert("Sesión confirmada ✅");
     } catch (e: any) {
       console.error(e);
       alert(e?.message || "No se pudo confirmar la sesión");
@@ -180,7 +167,7 @@ export default function TutorDashboard() {
     const v = schedule[id];
     if (!v) return true;
     const t = new Date(v).getTime();
-    return isNaN(t); // inválida
+    return isNaN(t);
   };
 
   return (
@@ -202,7 +189,14 @@ export default function TutorDashboard() {
             <button className="btn-secondary" onClick={load} disabled={loading}>
               {loading ? "Cargando…" : "Recargar"}
             </button>
-            <button className="btn-logout" type="button" onClick={handleLogout}>
+            <button
+              className="btn-logout"
+              type="button"
+              onClick={async () => {
+                await logout();
+                navigate("/", { replace: true });
+              }}
+            >
               Cerrar sesión
             </button>
           </div>
@@ -356,7 +350,7 @@ html,body,#root{height:100%} body{margin:0;background:transparent}
   color:#fff; background:linear-gradient(180deg,var(--dark),var(--mid)); font-weight:800; border:1px solid rgba(255,255,255,.6);}
 .brand-text{line-height:1.1}
 .brand-kicker{font-size:12px; color:#475569}
-.brand-title{margin:0; font-size:18px; color:#0f172a; font-weight:800; letter-spacing:.2px}
+.brand-title{margin:0; font-size:18px; color:var(--dark); font-weight:800; letter-spacing:.2px}
 
 /* Botones */
 .btn-secondary{
@@ -367,16 +361,14 @@ html,body,#root{height:100%} body{margin:0;background:transparent}
 .btn-secondary:active{transform:translateY(1px)}
 .btn-secondary:disabled{opacity:.6;cursor:not-allowed}
 
+/* 🔁 Igual que en Admin/Dashboard */
 .btn-logout{
-  padding:10px 16px; border-radius:12px; border:none;
-  background:linear-gradient(90deg,#ef4444,#dc2626);
-  color:white; font-weight:700; cursor:pointer;
-  transition:filter .2s ease, transform .05s ease;
+  padding:10px 14px; border-radius:12px; border:1px solid #fecaca; background:#fee2e2;
+  color:#b91c1c; font-weight:700; cursor:pointer; transition:filter .2s ease, transform .05s ease;
 }
 .btn-logout:hover{filter:brightness(1.05)}
 .btn-logout:active{transform:translateY(1px)}
 
-/* Subheader */
 .subheader{padding:20px 22px 6px}
 .page-title{margin:0 0 4px; font-size:22px; color:#0f172a; font-weight:800}
 .page-sub{margin:0; font-size:14px; color:#475569}

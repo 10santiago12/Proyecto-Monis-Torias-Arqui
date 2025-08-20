@@ -1,7 +1,7 @@
-// src/pages/Dashboard.tsx
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../services/api";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 
 type MaybeTimestamp =
   | string
@@ -29,6 +29,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   // --- helpers de fecha ---
   const toISO = (v: MaybeTimestamp): string | undefined => {
@@ -62,7 +63,6 @@ export default function Dashboard() {
       .then((list) => {
         const arr = Array.isArray(list) ? (list as Session[]) : [];
         setSessions(arr);
-        // console.log("[Student] /sessions ->", arr);
       })
       .catch((e: any) => {
         console.error(e);
@@ -107,7 +107,14 @@ export default function Dashboard() {
               <Link to="/request-session" className="btn-primary disabled">
                 ➕ Crear sesión
               </Link>
-              <button onClick={() => navigate("/")} className="btn-logout" type="button">
+              <button
+                onClick={async () => {
+                  await logout();
+                  navigate("/", { replace: true });
+                }}
+                className="btn-logout"
+                type="button"
+              >
                 Cerrar sesión
               </button>
             </div>
@@ -143,7 +150,14 @@ export default function Dashboard() {
             <Link to="/request-session" className="btn-primary">
               Crear sesión
             </Link>
-            <button onClick={() => navigate("/")} className="btn-logout" type="button">
+            <button
+              onClick={async () => {
+                await logout();
+                navigate("/", { replace: true });
+              }}
+              className="btn-logout"
+              type="button"
+            >
               Cerrar sesión
             </button>
           </div>
@@ -181,7 +195,6 @@ export default function Dashboard() {
                     <p className="card-desc">
                       {fmt(s.scheduledAt)} · {s.durationMin ? `${s.durationMin} min` : "Duración no definida"}
                     </p>
-                    {/* Si tienes página de detalle */}
                     <Link to={`/sessions/${s.id}`} className="card-link">
                       Ver sesión →
                     </Link>

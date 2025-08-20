@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -7,58 +6,67 @@ import {
 import { auth, db } from "../lib/firebase";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 
+type Role = "student" | "tutor" | "manager";
+
 export default function LoginPage() {
-  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isRegister, setIsRegister] = useState(false);
-  const [role, setRole] = useState("student");
+  const [role, setRole] = useState<Role>("student");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const roleRoutes: Record<string, string> = {
-    student: "/dashboard",
-    tutor: "/tutor",
-    manager: "/admin",
-  };
+  const roleToClaims = (r: Role) =>
+    r === "manager" ? { manager: true } : r === "tutor" ? { tutor: true } : { student: true };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setSubmitting(true);
 
     try {
       if (isRegister) {
-        const cred = await createUserWithEmailAndPassword(auth, email, password);
+        // Crear cuenta
+        const cred = await createUserWithEmailAndPassword(auth, email.trim(), password);
         const uid = cred.user.uid;
 
+        // Guarda perfil "humano" (opcional)
         await setDoc(doc(db, "users", uid), {
-          email,
+          email: email.trim(),
           role,
           createdAt: new Date().toISOString(),
         });
 
-        alert("✅ Cuenta creada con éxito");
-        navigate(roleRoutes[role] || "/dashboard");
+        // Guarda roles que usa el backend para autorizar
+        await setDoc(doc(db, "user_roles", uid), roleToClaims(role), { merge: true });
+
+        // Nota: NO navegamos. GuestRoute te redirige según user+roles.
       } else {
-        const cred = await signInWithEmailAndPassword(auth, email, password);
+        // Iniciar sesión
+        const cred = await signInWithEmailAndPassword(auth, email.trim(), password);
         const uid = cred.user.uid;
 
-        const snap = await getDoc(doc(db, "users", uid));
-        if (snap.exists()) {
-          const userData = snap.data();
-          navigate(roleRoutes[userData.role] || "/dashboard");
-        } else {
-          navigate("/dashboard");
+        // Si no existe user_roles, asume estudiante por defecto (evita quedarse en login)
+        const rolesSnap = await getDoc(doc(db, "user_roles", uid));
+        if (!rolesSnap.exists()) {
+          await setDoc(doc(db, "user_roles", uid), { student: true }, { merge: true });
         }
+
+        // Nota: NO navegamos. GuestRoute te redirige según user+roles.
       }
     } catch (err: any) {
       console.error(err);
-      if (err.code === "auth/email-already-in-use") {
+      if (err?.code === "auth/email-already-in-use") {
         setError("Este correo ya está en uso.");
-      } else if (err.code === "auth/invalid-credential") {
+      } else if (err?.code === "auth/invalid-credential" || err?.code === "auth/wrong-password") {
         setError("Credenciales inválidas.");
+      } else if (err?.code === "auth/user-not-found") {
+        setError("Usuario no encontrado.");
       } else {
         setError("Ocurrió un error. Intenta de nuevo.");
       }
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -201,6 +209,7 @@ export default function LoginPage() {
         }
         .submit:hover { filter: brightness(1.05); }
         .submit:active { transform: translateY(1px); }
+        .submit:disabled { opacity: .6; cursor: not-allowed; }
 
         .switch {
           margin-top: 12px;
@@ -299,18 +308,19 @@ export default function LoginPage() {
                   <label className="label">Rol</label>
                   <select
                     value={role}
-                    onChange={(e) => setRole(e.target.value)}
+                    onChange={(e) => setRole(e.target.value as Role)}
                     className="select"
                   >
                     <option value="student">Estudiante</option>
                     <option value="tutor">Tutor</option>
-                    <option value="admin">Administrador</option>
+                    {/* Valor corregido a 'manager' para coincidir con tu backend */}
+                    <option value="manager">Administrador</option>
                   </select>
                 </div>
               )}
 
-              <button type="submit" className="submit">
-                {isRegister ? "Registrarse" : "Ingresar"}
+              <button type="submit" className="submit" disabled={submitting}>
+                {submitting ? (isRegister ? "Creando…" : "Ingresando…") : isRegister ? "Registrarse" : "Ingresar"}
               </button>
             </form>
 
