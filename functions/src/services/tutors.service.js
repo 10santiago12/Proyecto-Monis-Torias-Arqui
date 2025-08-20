@@ -10,15 +10,11 @@ class TutorsService {
     return this.repo.listAll();
   }
 
-  /**
-   * Crea un código (4 dígitos) y lo asigna a un tutor (claim).
-   * También asegura el perfil en "tutors" con el code.
-   */
   async assignCodeToTutor(managerUid, tutorUid, note) {
     const c = await this.repo.createCode(managerUid, note);
     await this.repo.claimCode(tutorUid, c.code);
 
-    // Guarda/actualiza perfil del tutor con su code
+    // 👇 al guardar perfil, intenta persistir email/displayName desde Auth
     await this.repo.ensureTutorProfile(tutorUid, {
       role: "tutor",
       code: c.code,

@@ -1,19 +1,94 @@
 // src/pages/Dashboard.tsx
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api } from "../services/api";
 import { Link, useNavigate } from "react-router-dom";
 
+type MaybeTimestamp =
+  | string
+  | { seconds: number; nanoseconds?: number }
+  | { _seconds: number; _nanoseconds?: number }
+  | { toDate: () => Date }
+  | null
+  | undefined;
+
+type Session = {
+  id: string;
+  status: "requested" | "confirmed" | "done" | string;
+  topic?: string;
+  description?: string;
+  durationMin?: number;
+  preferredAt?: MaybeTimestamp;
+  scheduledAt?: MaybeTimestamp;
+  createdAt?: MaybeTimestamp;
+  tutorId?: string | null;
+  tutorCode?: string;
+};
+
 export default function Dashboard() {
-  const [sessions, setSessions] = useState<any[]>([]);
+  const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate(); // para redirigir a "/"
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+
+  // --- helpers de fecha ---
+  const toISO = (v: MaybeTimestamp): string | undefined => {
+    if (!v) return undefined;
+    if (typeof v === "string") return v;
+    // @ts-ignore
+    if (typeof v?.seconds === "number") return new Date(v.seconds * 1000).toISOString();
+    // @ts-ignore
+    if (typeof v?._seconds === "number") return new Date(v._seconds * 1000).toISOString();
+    // @ts-ignore
+    if (typeof v?.toDate === "function") return (v as any).toDate().toISOString();
+    return undefined;
+  };
+  const toTime = (v: MaybeTimestamp): number => {
+    const iso = toISO(v);
+    if (!iso) return NaN;
+    const t = new Date(iso).getTime();
+    return isNaN(t) ? NaN : t;
+  };
+  const fmt = (v: MaybeTimestamp) => {
+    const iso = toISO(v);
+    if (!iso) return "Por agendar";
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "Fecha inválida";
+    return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(d);
+  };
 
   useEffect(() => {
     api
       .getSessions()
-      .then(setSessions)
+      .then((list) => {
+        const arr = Array.isArray(list) ? (list as Session[]) : [];
+        setSessions(arr);
+        // console.log("[Student] /sessions ->", arr);
+      })
+      .catch((e: any) => {
+        console.error(e);
+        setError("No se pudieron cargar tus sesiones.");
+      })
       .finally(() => setLoading(false));
   }, []);
+
+  // Confirmadas futuras
+  const confirmedUpcoming = useMemo(() => {
+    const now = Date.now();
+    return sessions
+      .filter((s) => s.status === "confirmed")
+      .filter((s) => {
+        const t = toTime(s.scheduledAt);
+        return !isNaN(t) && t >= now;
+      })
+      .sort((a, b) => toTime(a.scheduledAt) - toTime(b.scheduledAt));
+  }, [sessions]);
+
+  // Pendientes por confirmar
+  const pending = useMemo(() => {
+    return sessions
+      .filter((s) => s.status === "requested")
+      .sort((a, b) => toTime(a.preferredAt || a.createdAt) - toTime(b.preferredAt || b.createdAt));
+  }, [sessions]);
 
   if (loading) {
     return (
@@ -32,12 +107,7 @@ export default function Dashboard() {
               <Link to="/request-session" className="btn-primary disabled">
                 ➕ Crear sesión
               </Link>
-              {/* Botón Cerrar sesión (rojo) */}
-              <button
-                onClick={() => navigate("/")}
-                className="btn-logout"
-                type="button"
-              >
+              <button onClick={() => navigate("/")} className="btn-logout" type="button">
                 Cerrar sesión
               </button>
             </div>
@@ -69,17 +139,11 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* ✅ Botón único, fuera del map */}
           <div className="header-cta">
             <Link to="/request-session" className="btn-primary">
-               Crear sesión
+              Crear sesión
             </Link>
-            {/* Botón Cerrar sesión (rojo) */}
-            <button
-              onClick={() => navigate("/")}
-              className="btn-logout"
-              type="button"
-            >
+            <button onClick={() => navigate("/")} className="btn-logout" type="button">
               Cerrar sesión
             </button>
           </div>
@@ -87,27 +151,76 @@ export default function Dashboard() {
 
         {/* Subheader */}
         <div className="subheader">
-          <h2 className="page-title">Sesiones disponibles</h2>
-          <p className="page-sub">
-            Explora las sesiones activas y entra al detalle para ver horario, tutor y materiales.
-          </p>
+          <h2 className="page-title">Tus sesiones</h2>
+          <p className="page-sub">Aquí verás tus próximas tutorías y las solicitudes pendientes.</p>
         </div>
 
-        {/* Lista de sesiones */}
-        <ul className="cards-grid">
-          {sessions.map((s) => (
-            <li key={s.id} className="card">
-              <div className="card-body">
-                <h3 className="card-title">{s.title ?? "Sesión"}</h3>
-                <p className="card-desc">{s.description ?? "Sin descripción"}</p>
+        {error && (
+          <div style={{ margin: "0 22px 10px", color: "#b91c1c", fontWeight: 700 }}>
+            {error}
+          </div>
+        )}
 
-                <Link to={`/sessions/${s.id}`} className="card-link">
-                  Ver sesión →
-                </Link>
-              </div>
-            </li>
-          ))}
-        </ul>
+        {/* Confirmadas próximas */}
+        <section className="content">
+          <h3 style={{ margin: "0 0 8px" }}>
+            Confirmadas (próximas) <span className="chip">{confirmedUpcoming.length}</span>
+          </h3>
+
+          {confirmedUpcoming.length === 0 ? (
+            <div className="empty">
+              <div className="empty-icon">📅</div>
+              <p className="empty-text">No tienes sesiones confirmadas próximas.</p>
+            </div>
+          ) : (
+            <ul className="cards-grid">
+              {confirmedUpcoming.map((s) => (
+                <li key={s.id} className="card">
+                  <div className="card-body">
+                    <h3 className="card-title">{s.topic || "Tutoría"}</h3>
+                    <p className="card-desc">
+                      {fmt(s.scheduledAt)} · {s.durationMin ? `${s.durationMin} min` : "Duración no definida"}
+                    </p>
+                    {/* Si tienes página de detalle */}
+                    <Link to={`/sessions/${s.id}`} className="card-link">
+                      Ver sesión →
+                    </Link>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        {/* Pendientes por confirmar */}
+        <section className="content">
+          <h3 style={{ margin: "0 0 8px" }}>
+            Pendientes por confirmar <span className="chip">{pending.length}</span>
+          </h3>
+
+          {pending.length === 0 ? (
+            <div className="empty">
+              <div className="empty-icon">📝</div>
+              <p className="empty-text">No tienes solicitudes pendientes.</p>
+            </div>
+          ) : (
+            <ul className="cards-grid">
+              {pending.map((s) => (
+                <li key={s.id} className="card">
+                  <div className="card-body">
+                    <h3 className="card-title">{s.topic || "Tutoría"}</h3>
+                    <p className="card-desc">
+                      Preferida: {fmt(s.preferredAt)} · {s.durationMin ? `${s.durationMin} min` : "Duración no definida"}
+                    </p>
+                    <Link to={`/sessions/${s.id}`} className="card-link">
+                      Ver solicitud →
+                    </Link>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </div>
     </div>
   );
@@ -167,7 +280,7 @@ html,body,#root{height:100%} body{margin:0; background:transparent}
 .content{padding:22px}
 
 .cards-grid{
-  list-style:none; padding:22px; margin:0;
+  list-style:none; padding:0 22px 22px; margin:0;
   display:grid; grid-template-columns:repeat(12,1fr); gap:16px;
 }
 @media (max-width: 900px){
@@ -199,6 +312,15 @@ html,body,#root{height:100%} body{margin:0; background:transparent}
 }
 .card-link:hover{ text-decoration:underline }
 .card-link:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(0,91,187,.18) }
+
+/* chips + empty */
+.chip{
+  display:inline-flex; align-items:center; justify-content:center; min-width:28px; height:24px; padding:0 8px;
+  border-radius:999px; font-size:12px; font-weight:800; color:#0f172a; background:#f1f6ff; border:1px solid #dbe7f8;
+}
+.empty{display:grid; place-items:center; text-align:center; padding:18px; border:1px dashed #cfe0f8; border-radius:12px; background:#fbfdff; margin:0 22px 22px}
+.empty-icon{font-size:26px; margin-bottom:6px}
+.empty-text{margin:0; color:#475569}
 
 /* skeleton loading */
 .skeleton-grid{display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px}

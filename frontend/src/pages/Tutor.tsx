@@ -1,25 +1,186 @@
+// src/pages/Tutor.tsx
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { api } from "../services/api";
+
+type MaybeTimestamp =
+  | string
+  | { seconds: number; nanoseconds?: number }
+  | { _seconds: number; _nanoseconds?: number }
+  | { toDate: () => Date }
+  | null
+  | undefined;
+
+type Session = {
+  id: string;
+  status: "requested" | "confirmed" | "done" | string;
+  topic?: string;
+  description?: string;
+  durationMin?: number;
+  preferredAt?: MaybeTimestamp;
+  scheduledAt?: MaybeTimestamp;
+  createdAt?: MaybeTimestamp;
+  studentId?: string;
+  tutorId?: string;
+  tutorCode?: string;
+};
 
 export default function TutorDashboard() {
   const navigate = useNavigate();
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState("");
+  const [savingId, setSavingId] = useState<string | null>(null);
+
+  // Mapa: sessionId -> valor del input datetime-local
+  const [schedule, setSchedule] = useState<Record<string, string>>({});
+
+  // --- helpers fecha ---
+  const toISO = (v: MaybeTimestamp): string | undefined => {
+    if (!v) return undefined;
+    if (typeof v === "string") return v;
+    // @ts-ignore
+    if (typeof v?.seconds === "number") return new Date(v.seconds * 1000).toISOString();
+    // @ts-ignore
+    if (typeof v?._seconds === "number") return new Date(v._seconds * 1000).toISOString();
+    // @ts-ignore
+    if (typeof v?.toDate === "function") return (v as any).toDate().toISOString();
+    return undefined;
+  };
+  const toTime = (v: MaybeTimestamp): number => {
+    const iso = toISO(v);
+    if (!iso) return NaN;
+    const t = new Date(iso).getTime();
+    return isNaN(t) ? NaN : t;
+    };
+  const fmt = (v: MaybeTimestamp) => {
+    const iso = toISO(v);
+    if (!iso) return "Por agendar";
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "Fecha inválida";
+    return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(d);
+  };
+  // ISO -> "YYYY-MM-DDTHH:mm" (valor de <input type="datetime-local">)
+  const isoToLocalInput = (iso?: string) => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "";
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const y = d.getFullYear();
+    const m = pad(d.getMonth() + 1);
+    const day = pad(d.getDate());
+    const h = pad(d.getHours());
+    const min = pad(d.getMinutes());
+    return `${y}-${m}-${day}T${h}:${min}`;
+  };
+  // "YYYY-MM-DDTHH:mm" -> ISO
+  const localInputToISO = (v: string) => {
+    if (!v) return "";
+    const d = new Date(v); // interpreta en zona local
+    return isNaN(d.getTime()) ? "" : d.toISOString();
+  };
+
+  // --- carga desde API ---
+  const load = async () => {
+    try {
+      setError("");
+      setLoading(true);
+      const list = await api.getSessions();
+      setSessions(Array.isArray(list) ? list : []);
+      // Prefill inputs con preferredAt si existe (o ahora + 1h)
+      const prefill: Record<string, string> = {};
+      (Array.isArray(list) ? list : []).forEach((s: Session) => {
+        if (s.status === "requested") {
+          const prefISO = toISO(s.preferredAt);
+          const fallbackISO = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+          prefill[s.id] = isoToLocalInput(prefISO || fallbackISO);
+        }
+      });
+      setSchedule(prefill);
+    } catch (e: any) {
+      console.error(e);
+      setError("No se pudieron cargar tus tutorías.");
+      setSessions([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  // Confirmadas con fecha futura
+  const confirmedUpcoming = useMemo(() => {
+    const now = Date.now();
+    return sessions
+      .filter((s) => s.status === "confirmed")
+      .filter((s) => {
+        const t = toTime(s.scheduledAt);
+        return !isNaN(t) && t >= now;
+      })
+      .sort((a, b) => toTime(a.scheduledAt) - toTime(b.scheduledAt));
+  }, [sessions]);
+
+  // Pedidas pero sin confirmar
+  const pending = useMemo(
+    () =>
+      sessions
+        .filter((s) => s.status === "requested")
+        .sort((a, b) => toTime(a.preferredAt || a.createdAt) - toTime(b.preferredAt || b.createdAt)),
+    [sessions]
+  );
 
   const handleLogout = async () => {
     try {
-      // TODO: llama aquí tu servicio real de logout si aplica (Firebase/Supabase/tu API)
-      // Ejemplos:
-      // await signOut(auth);
-      // await api.auth.logout();
-
-      // Limpieza local básica
+      // TODO: signOut(auth) si usas Firebase
       localStorage.removeItem("token");
       sessionStorage.clear();
-
       alert("Has cerrado sesión ✅");
-      navigate("/"); // 👉 redirige a la raíz
+      navigate("/");
     } catch (err) {
       console.error(err);
       alert("No se pudo cerrar sesión. Inténtalo de nuevo.");
     }
+  };
+
+  const handleChangeDate = (id: string, v: string) => {
+    setSchedule((prev) => ({ ...prev, [id]: v }));
+  };
+
+  const handleConfirm = async (id: string) => {
+    const localVal = schedule[id];
+    if (!localVal) return;
+    const iso = localInputToISO(localVal);
+    if (!iso) {
+      alert("Fecha/hora inválida");
+      return;
+    }
+    try {
+      setSavingId(id);
+      await api.confirmSession(id, iso);
+      // Actualizar estado local
+      setSessions((prev) =>
+        prev.map((s) =>
+          s.id === id
+            ? { ...s, status: "confirmed", scheduledAt: iso, confirmedAt: new Date().toISOString() as any }
+            : s
+        )
+      );
+      alert("Sesión confirmada ✅");
+    } catch (e: any) {
+      console.error(e);
+      alert(e?.message || "No se pudo confirmar la sesión");
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const isConfirmDisabled = (id: string) => {
+    const v = schedule[id];
+    if (!v) return true;
+    const t = new Date(v).getTime();
+    return isNaN(t); // inválida
   };
 
   return (
@@ -37,49 +198,120 @@ export default function TutorDashboard() {
             </div>
           </div>
 
-          {/* Botón Logout */}
-          <button className="btn-logout" type="button" onClick={handleLogout}>
-            Cerrar sesión
-          </button>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button className="btn-secondary" onClick={load} disabled={loading}>
+              {loading ? "Cargando…" : "Recargar"}
+            </button>
+            <button className="btn-logout" type="button" onClick={handleLogout}>
+              Cerrar sesión
+            </button>
+          </div>
         </header>
 
         {/* Subheader */}
         <section className="subheader">
           <h2 className="page-title">Panel de Tutor</h2>
-          <p className="page-sub">
-            Aquí podrás ver y confirmar sesiones, además de gestionar tu perfil.
-          </p>
+          <p className="page-sub">Aquí podrás ver y confirmar sesiones, además de gestionar tu perfil.</p>
         </section>
 
-        {/* Contenido visual */}
+        {error && <div className="alert-error">{error}</div>}
+
+        {/* Contenido */}
         <section className="grid">
-          {/* Próximas sesiones */}
+          {/* Confirmadas próximas */}
           <div className="card card-span2">
             <div className="card-head">
-              <h3 className="card-title">Próximas sesiones</h3>
-              <span className="chip">0</span>
+              <h3 className="card-title">Confirmadas (próximas)</h3>
+              <span className="chip">{confirmedUpcoming.length}</span>
             </div>
-            <div className="empty">
-              <div className="empty-icon">📅</div>
-              <p className="empty-text">No tienes sesiones por confirmar.</p>
-            </div>
+
+            {loading ? (
+              <div className="empty">
+                <div className="empty-icon">⏳</div>
+                <p className="empty-text">Cargando tus sesiones…</p>
+              </div>
+            ) : confirmedUpcoming.length === 0 ? (
+              <div className="empty">
+                <div className="empty-icon">📅</div>
+                <p className="empty-text">No tienes sesiones próximas confirmadas.</p>
+              </div>
+            ) : (
+              <ul className="sessions">
+                {confirmedUpcoming.map((s) => (
+                  <li key={s.id} className="session-item">
+                    <div className="session-main">
+                      <div className="session-title">{s.topic || "Tutoría"}</div>
+                      <div className="session-sub">
+                        {fmt(s.scheduledAt)} · {s.durationMin ? `${s.durationMin} min` : "Duración no definida"}
+                      </div>
+                    </div>
+                    <div className="session-cta">
+                      <button className="btn-primary" disabled>
+                        Abrir meet
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
-          {/* Acciones rápidas */}
+          {/* Pendientes por confirmar */}
           <div className="card">
-            <h3 className="card-title">Acciones rápidas</h3>
-            <div className="actions">
-              <button className="btn-primary" type="button" disabled>
-                Ver calendario
-              </button>
-              <button className="btn-secondary" type="button" disabled>
-                Abrir materiales
-              </button>
+            <div className="card-head">
+              <h3 className="card-title">Pendientes por confirmar</h3>
+              <span className="chip">{pending.length}</span>
             </div>
-            <p className="hint">*Botones de muestra (sin funcionalidad nueva)</p>
+
+            {loading ? (
+              <div className="empty">
+                <div className="empty-icon">⏳</div>
+                <p className="empty-text">Cargando…</p>
+              </div>
+            ) : pending.length === 0 ? (
+              <div className="empty">
+                <div className="empty-icon">📝</div>
+                <p className="empty-text">No tienes solicitudes pendientes.</p>
+              </div>
+            ) : (
+              <ul className="sessions">
+                {pending.map((s) => (
+                  <li key={s.id} className="session-item">
+                    <div className="session-main" style={{ flex: 1 }}>
+                      <div className="session-title">{s.topic || "Tutoría"}</div>
+                      <div className="session-sub">
+                        Preferida: {fmt(s.preferredAt)} · {s.durationMin ? `${s.durationMin} min` : "Duración no definida"}
+                      </div>
+                    </div>
+
+                    {/* selector de fecha y botón confirmar */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <input
+                        type="datetime-local"
+                        value={schedule[s.id] || ""}
+                        onChange={(e) => handleChangeDate(s.id, e.target.value)}
+                        style={{
+                          padding: "8px 10px",
+                          border: "1px solid #dbe7f8",
+                          borderRadius: 10,
+                          fontSize: 13,
+                        }}
+                      />
+                      <button
+                        className="btn-primary"
+                        disabled={isConfirmDisabled(s.id) || savingId === s.id}
+                        onClick={() => handleConfirm(s.id)}
+                      >
+                        {savingId === s.id ? "Confirmando…" : "Confirmar"}
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
-          {/* Tu perfil */}
+          {/* Perfil */}
           <div className="card">
             <h3 className="card-title">Tu perfil</h3>
             <ul className="list">
@@ -124,9 +356,17 @@ html,body,#root{height:100%} body{margin:0;background:transparent}
   color:#fff; background:linear-gradient(180deg,var(--dark),var(--mid)); font-weight:800; border:1px solid rgba(255,255,255,.6);}
 .brand-text{line-height:1.1}
 .brand-kicker{font-size:12px; color:#475569}
-.brand-title{margin:0; font-size:18px; color:var(--dark); font-weight:800; letter-spacing:.2px}
+.brand-title{margin:0; font-size:18px; color:#0f172a; font-weight:800; letter-spacing:.2px}
 
-/* Botón Logout */
+/* Botones */
+.btn-secondary{
+  padding:10px 14px;border-radius:12px;border:1px solid #dbe7f8;background:#f7faff;color:#0f172a;
+  font-weight:700;cursor:pointer;transition:filter .2s ease, transform .05s ease;
+}
+.btn-secondary:hover{filter:brightness(1.03)}
+.btn-secondary:active{transform:translateY(1px)}
+.btn-secondary:disabled{opacity:.6;cursor:not-allowed}
+
 .btn-logout{
   padding:10px 16px; border-radius:12px; border:none;
   background:linear-gradient(90deg,#ef4444,#dc2626);
@@ -140,6 +380,12 @@ html,body,#root{height:100%} body{margin:0;background:transparent}
 .subheader{padding:20px 22px 6px}
 .page-title{margin:0 0 4px; font-size:22px; color:#0f172a; font-weight:800}
 .page-sub{margin:0; font-size:14px; color:#475569}
+
+/* Alert */
+.alert-error{
+  margin:10px 22px 0;padding:10px 12px;border-radius:12px;
+  background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;font-weight:600;font-size:14px;
+}
 
 /* Grid / Cards */
 .grid{
@@ -186,17 +432,15 @@ html,body,#root{height:100%} body{margin:0;background:transparent}
 .btn-primary:active{transform:translateY(1px)}
 .btn-primary:disabled{opacity:.6; cursor:not-allowed}
 
-.btn-secondary{
-  padding:10px 14px; border-radius:12px; border:1px solid #dbe7f8; background:#f7faff; color:#0f172a;
-  font-weight:700; cursor:pointer; transition:filter .2s ease, transform .05s ease; 
-}
-.btn-secondary:hover{filter:brightness(1.03)}
-.btn-secondary:active{transform:translateY(1px)}
-.btn-secondary:disabled{opacity:.6; cursor:not-allowed}
-
 .hint{margin:8px 0 0; font-size:12px; color:#64748b}
 
-/* List */
-.list{list-style:none; margin:0; padding:0}
-.list li{padding:6px 0; color:#334155}
+/* Lista de sesiones */
+.sessions{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px}
+.session-item{
+  border:1px solid #e6edf7; border-radius:12px; padding:12px; display:flex; align-items:center; justify-content:space-between; gap:12px;
+}
+.session-title{font-weight:800}
+.session-sub{font-size:13px; color:#475569}
+.session-cta{display:flex; align-items:center}
+.muted{color:#64748b; font-weight:600}
 `;

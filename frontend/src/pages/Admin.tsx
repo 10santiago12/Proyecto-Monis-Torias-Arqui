@@ -6,7 +6,7 @@ import { api } from "../services/api";
 type Tutor = {
   id: string;         // uid del tutor
   displayName?: string;
-  email?: string;
+  email?: string;     // 👈 si tu backend lo envía, lo tomamos directo
   code?: string;      // código de 4 dígitos si ya lo tiene
   role?: string;      // "tutor"
 };
@@ -53,6 +53,36 @@ export default function AdminPage() {
     } finally {
       setAssigning(null);
     }
+  };
+
+  // 🔎 Obtiene el correo desde varias rutas posibles (según cómo venga del backend).
+  const getEmail = (t: any): string => {
+    return (
+      t?.email ||
+      t?.user?.email ||
+      t?.profile?.email ||
+      t?.auth?.email ||
+      t?.contact?.email ||
+      t?.mail ||
+      t?.emailAddress ||
+      t?.primaryEmail ||
+      t?.contactEmail ||
+      "—"
+    );
+  };
+
+  // Iniciales para el avatar basadas en el correo si existe; si no, displayName; si no, uid.
+  const getInitials = (t: any): string => {
+    const email = getEmail(t);
+    const base =
+      email !== "—"
+        ? email.split("@")[0]
+        : (t.displayName ?? t.id ?? "")
+            .toString()
+            .split(" ")
+            .filter(Boolean)
+            .join("");
+    return base.replace(/[^a-zA-Z0-9]/g, "").slice(0, 2).toUpperCase() || "??";
   };
 
   if (loading) {
@@ -105,11 +135,8 @@ export default function AdminPage() {
             <button onClick={load} className="btn-secondary">
               Recargar
             </button>
-            {/* 👇 Botón Cerrar sesión en rojo */}
-            <button
-              onClick={() => navigate("/")}
-              className="btn-logout"
-            >
+            {/* 👇 Botón Cerrar sesión (solo navega al inicio) */}
+            <button onClick={() => navigate("/")} className="btn-logout">
               Cerrar sesión
             </button>
           </div>
@@ -134,43 +161,42 @@ export default function AdminPage() {
           </div>
         ) : (
           <ul className="grid">
-            {tutors.map((t) => (
-              <li key={t.id} className="card">
-                <div className="card-left">
-                  <div className="avatar">
-                    {(t.displayName ?? t.id)
-                      .split(" ")
-                      .map(w => w[0])
-                      .join("")
-                      .slice(0,2)
-                      .toUpperCase()}
-                  </div>
-                  <div className="meta">
-                    <p className="name">{t.displayName ?? t.id}</p>
-                    <p className="email">{t.email ?? "—"}</p>
-                    <p className="row">
-                      Rol: <span className="val">{t.role ?? "tutor"}</span>
-                    </p>
-                    <p className="row">
-                      Código:{" "}
-                      <span className={`code ${t.code ? "" : "code--empty"}`}>
-                        {t.code ? t.code : "— sin asignar —"}
-                      </span>
-                    </p>
-                  </div>
-                </div>
+            {tutors.map((t) => {
+              const email = getEmail(t);
+              const initials = getInitials(t);
 
-                <div className="card-right">
-                  <button
-                    disabled={!!t.code || assigning === t.id}
-                    onClick={() => handleAssign(t.id)}
-                    className={`btn-primary ${!!t.code ? "btn-disabled" : ""}`}
-                  >
-                    {assigning === t.id ? "Asignando..." : "Asignar código 4 dígitos"}
-                  </button>
-                </div>
-              </li>
-            ))}
+              return (
+                <li key={t.id} className="card">
+                  <div className="card-left">
+                    <div className="avatar">{initials}</div>
+                    <div className="meta">
+                      {/* 👇 Mostrar correo (o guion). Nunca mostrar UID */}
+                      <p className="name">{email}</p>
+                      <p className="email">{email}</p>
+                      <p className="row">
+                        Rol: <span className="val">{t.role ?? "tutor"}</span>
+                      </p>
+                      <p className="row">
+                        Código:{" "}
+                        <span className={`code ${t.code ? "" : "code--empty"}`}>
+                          {t.code ? t.code : "— sin asignar —"}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="card-right">
+                    <button
+                      disabled={!!t.code || assigning === t.id}
+                      onClick={() => handleAssign(t.id)}
+                      className={`btn-primary ${!!t.code ? "btn-disabled" : ""}`}
+                    >
+                      {assigning === t.id ? "Asignando..." : "Asignar código 4 dígitos"}
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>

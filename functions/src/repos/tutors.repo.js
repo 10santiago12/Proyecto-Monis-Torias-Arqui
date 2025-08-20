@@ -7,7 +7,7 @@ const PROFILES = "tutors";
 
 class TutorsRepo {
   async createCode(managerUid, note) {
-    const code = await this._genUniqueCode(); // 4 dígitos
+    const code = await this._genUniqueCode(); // 4 dígitos únicos
     const data = {
       code,
       createdBy: managerUid,
@@ -38,15 +38,16 @@ class TutorsRepo {
     await ref.set(data, { merge: true });
   }
 
+  /** ✅ Necesario para crear sesiones con tutorCode */
   async getByCode(code) {
     const doc = await db.collection(CODES).doc(code).get();
     if (!doc.exists) return null;
     const d = doc.data();
-    if (d.claimedBy) return { uid: d.claimedBy, code: d.code };
-    return { uid: null, code: d.code };
+    // Si el código fue reclamado, trae el uid del tutor
+    return { uid: d.claimedBy || null, code };
   }
 
-  // NUEVO: listar todos los tutores (colección "tutors")
+  // Listar todos los tutores (colección de perfiles)
   async listAll() {
     const snap = await db.collection(PROFILES).get();
     const out = [];
@@ -55,8 +56,7 @@ class TutorsRepo {
   }
 
   async _genUniqueCode() {
-    const make = () =>
-      Math.floor(Math.random() * 10000).toString().padStart(4, "0");
+    const make = () => Math.floor(Math.random() * 10000).toString().padStart(4, "0");
     let code = make();
     let snap = await db.collection(CODES).doc(code).get();
     while (snap.exists) {
