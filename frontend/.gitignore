@@ -5,14 +5,14 @@ node_modules/
 dist/
 dist-ssr/
 
-# Local env
+# Local env files
 .env
+.env.local
+.env.*.local
 *.local
 
 # Logs
 *.log
-
-lib/firebase.ts
 
 # Editor
 .vscode/*

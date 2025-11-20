@@ -1,13 +1,17 @@
 import { Routes, Route } from "react-router-dom";
+import { lazy, Suspense } from "react";
 import { AuthProvider } from "./hooks/useAuth";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+import { LoadingSpinner } from "./components/Loading";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import GuestRoute from "./routes/GuestRoute";
 
-import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
-import RequestSession from "./pages/RequestSession";
-import AdminDashboard from "./pages/Admin";
-import TutorDashboard from "./pages/Tutor";
+// Lazy load de páginas para code splitting
+const Login = lazy(() => import("./pages/Login"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const RequestSession = lazy(() => import("./pages/RequestSession"));
+const AdminDashboard = lazy(() => import("./pages/Admin"));
+const TutorDashboard = lazy(() => import("./pages/Tutor"));
 
 function Unauthorized() {
   return (
@@ -18,10 +22,26 @@ function Unauthorized() {
   );
 }
 
+// Componente de loading para Suspense
+function PageLoader() {
+  return (
+    <div style={{
+      minHeight: '100vh',
+      display: 'grid',
+      placeItems: 'center',
+      background: 'linear-gradient(180deg, #1A2E5A 0%, #2A4D8A 55%, #E6F0FA 100%)'
+    }}>
+      <LoadingSpinner size="large" />
+    </div>
+  );
+}
+
 export default function App() {
   return (
-    <AuthProvider>
-      <Routes>
+    <ErrorBoundary>
+      <AuthProvider>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
         {/* Login solo para invitados; si hay sesión, redirige a home por rol */}
         <Route
           path="/"
@@ -71,7 +91,9 @@ export default function App() {
         />
 
         <Route path="*" element={<Unauthorized />} />
-      </Routes>
-    </AuthProvider>
+          </Routes>
+        </Suspense>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
