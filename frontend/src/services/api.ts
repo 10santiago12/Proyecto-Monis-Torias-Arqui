@@ -1,7 +1,18 @@
 // src/services/api.ts
 import { auth } from "../lib/firebase";
 
-const API_URL = "https://proyecto-arqui-2c418.web.app/api";
+// Usar variable de entorno para la URL de la API
+// Desarrollo: http://localhost:5001/proyecto-arqui-2c418/us-central1/api
+// Producción: https://proyecto-arqui-2c418.web.app/api
+const API_URL = import.meta.env.VITE_API_URL || "https://proyecto-arqui-2c418.web.app/api";
+
+// Validación en desarrollo
+if (import.meta.env.DEV && !import.meta.env.VITE_API_URL) {
+  console.warn(
+    "⚠️ VITE_API_URL no está configurada. Usando URL de producción por defecto. " +
+    "Para desarrollo local, agrega VITE_API_URL a tu archivo .env"
+  );
+}
 
 async function request<T = any>(path: string, options: RequestInit = {}) {
   const token = await auth.currentUser?.getIdToken();

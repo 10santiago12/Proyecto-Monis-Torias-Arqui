@@ -38,7 +38,7 @@ describe('Login Component', () => {
       </BrowserRouter>
     );
 
-    expect(screen.getByText(/Monis-Torias/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Monis-Torias/i })).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/tunombre@unisabana.edu.co/i)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/••••••••/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Ingresar/i })).toBeInTheDocument();
@@ -56,7 +56,7 @@ describe('Login Component', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/Crear cuenta/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/Rol/i)).toBeInTheDocument();
+      expect(screen.getByRole('combobox')).toBeInTheDocument();
     });
   });
 
