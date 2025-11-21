@@ -200,6 +200,23 @@ npm run serve
 
 ## 🚢 Deployment
 
+### Opción 1: GitHub Actions (Recomendado)
+
+El proyecto tiene CI/CD automático configurado:
+
+- **CI**: Tests automáticos en cada push/PR
+- **CD**: Deploy automático a Firebase en merge a `main`
+
+📖 **Guía completa**: [`.github/GITHUB_ACTIONS_SETUP.md`](.github/GITHUB_ACTIONS_SETUP.md)
+
+```bash
+# Configurar secret FIREBASE_TOKEN en GitHub
+firebase login:ci
+# Copiar el token a GitHub Settings → Secrets → FIREBASE_TOKEN
+```
+
+### Opción 2: Firebase CLI Manual
+
 ```bash
 # Deploy completo (frontend + backend)
 firebase deploy
@@ -209,6 +226,63 @@ firebase deploy --only hosting
 
 # Solo backend
 firebase deploy --only functions
+```
+
+### Opción 3: Docker
+
+El proyecto está completamente containerizado con Docker Compose:
+
+📖 **Guía completa**: [`DOCKER_SETUP.md`](DOCKER_SETUP.md)
+
+```bash
+# Iniciar todos los servicios (backend + frontend + redis)
+docker-compose up -d
+
+# Ver logs
+docker-compose logs -f
+
+# Detener
+docker-compose down
+```
+
+## 🧪 Testing
+
+### Backend Tests
+
+```bash
+cd functions
+
+# Unit tests (92 tests, 98.67% coverage)
+npm run test:unit
+
+# Integration tests (12 tests)
+npm run test:integration
+
+# Coverage report
+npm run test:coverage
+
+# Postman/Newman API tests
+npm run postman
+
+# k6 Load tests
+cd load-tests
+k6 run sessions.js
+k6 run auth.js
+```
+
+### Frontend Tests
+
+```bash
+cd frontend
+
+# Unit tests con Vitest
+npm test
+
+# E2E tests con Cypress
+npm run test:e2e
+
+# Coverage
+npm run test:coverage
 ```
 
 ## 📦 Tecnologías
@@ -223,9 +297,25 @@ firebase deploy --only functions
 
 ### Backend
 - Firebase Functions
-- Express.js
+- Express.js 4.19.2
 - Firestore
 - Firebase Auth
+- Zod 3.23.8 (validation)
+- CORS 2.8.5
+
+### Testing & Automation
+- **Unit/Integration**: Jest 30.2.0 + Supertest 7.1.4
+- **API Testing**: Postman + Newman
+- **Load Testing**: k6 v1.4.1
+- **CI/CD**: GitHub Actions
+- **Containerization**: Docker + Docker Compose
+
+### Coverage
+- Backend: **98.67%** (92 unit tests)
+  - Services: 96.9%
+  - Repositories: 100%
+  - Middlewares: 100%
+- Frontend: 85%+ (Vitest + Cypress)
 
 ## 🤝 Contribuir
 

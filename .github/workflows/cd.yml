@@ -1,0 +1,59 @@
+name: CD - Deploy to Firebase
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to Firebase
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: Install functions dependencies
+        working-directory: ./functions
+        run: npm ci
+
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Build frontend for production
+        working-directory: ./frontend
+        env:
+          VITE_API_URL: https://us-central1-proyecto-arqui-2c418.cloudfunctions.net/api
+        run: npm run build
+
+      - name: Run backend tests
+        working-directory: ./functions
+        run: npm run test:unit
+
+      - name: Deploy to Firebase
+        uses: w9jds/firebase-action@master
+        with:
+          args: deploy
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          PROJECT_ID: proyecto-arqui-2c418
+
+      - name: Deployment notification
+        if: success()
+        run: |
+          echo "🚀 Deployment successful!"
+          echo "Frontend: https://proyecto-arqui-2c418.web.app"
+          echo "API: https://us-central1-proyecto-arqui-2c418.cloudfunctions.net/api"
+
+      - name: Deployment failed notification
+        if: failure()
+        run: |
+          echo "❌ Deployment failed. Check logs for details."
+          exit 1

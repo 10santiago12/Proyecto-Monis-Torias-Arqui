@@ -1,0 +1,43 @@
+{
+  "id": "prod-environment",
+  "name": "Production",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "https://us-central1-proyecto-arqui-2c418.cloudfunctions.net/api",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "sessionId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "paymentId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "tutorCode",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "tutorUid",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment"
+}
