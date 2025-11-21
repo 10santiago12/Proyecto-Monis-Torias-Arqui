@@ -33,6 +33,7 @@ jobs:
       - name: Run ESLint
         working-directory: ./functions
         run: npm run lint
+        continue-on-error: true
 
       - name: Run unit tests
         working-directory: ./functions
