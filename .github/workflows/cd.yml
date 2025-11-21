@@ -1,9 +1,11 @@
 name: CD - Deploy to Firebase
 
 on:
-  push:
-    branches: [ main ]
+  # Solo deploy manual o cuando se hace merge a main después de aprobar el CI
   workflow_dispatch:
+  # Descomenta la siguiente línea si quieres deploy automático en cada push a main
+  # push:
+  #   branches: [ main ]
 
 jobs:
   deploy:
