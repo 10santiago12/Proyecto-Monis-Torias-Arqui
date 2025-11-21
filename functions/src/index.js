@@ -21,20 +21,25 @@ const app = express();
 app.use(cors({ origin: true }));
 app.use(express.json());
 
-const API = "/api"; // base path
+// Logging middleware para debug
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
 
-// ✅ Ruta pública
-app.get(`${API}/health`, (_req, res) => res.json({ ok: true }));
+// ✅ Ruta pública de health check (sin prefijo /api porque Firebase ya lo monta en /api)
+app.get("/health", (_req, res) => {
+  console.log("Health check called");
+  return res.json({ ok: true });
+});
 
-// ✅ Middleware de autenticación para todas las rutas bajo /api/*
-app.use(API, authMiddleware);
-
-// ✅ Rutas de dominio bajo /api/...
-app.use(`${API}/sessions`, sessionsRoutes);
-app.use(`${API}/payments`, paymentsRoutes);
-app.use(`${API}/materials`, materialsRoutes);
-app.use(`${API}/users`, usersRoutes);
-app.use(`${API}/tutors`, tutorsRoutes);
+// ✅ Rutas de dominio (sin prefijo /api porque Firebase ya lo monta en /api)
+// Cada ruta maneja su propia autenticación internamente
+app.use("/sessions", sessionsRoutes);
+app.use("/payments", paymentsRoutes);
+app.use("/materials", materialsRoutes);
+app.use("/users", usersRoutes);
+app.use("/tutors", tutorsRoutes);
 
 // ✅ Middleware de errores
 app.use(errorMiddleware);

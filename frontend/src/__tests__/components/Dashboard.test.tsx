@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import Dashboard from '../../pages/Dashboard';
-import { AuthProvider } from '../../hooks/useAuth';
 
 // Mock de useAuth
 const mockUseAuth = vi.fn();
@@ -31,7 +30,7 @@ vi.mock('../../lib/firebase', () => ({
 
 vi.mock('firebase/auth', () => ({
   signOut: vi.fn(() => Promise.resolve()),
-  onAuthStateChanged: vi.fn((auth, callback) => {
+  onAuthStateChanged: vi.fn((_auth, callback) => {
     callback({ uid: 'test-uid', email: 'test@test.com' });
     return () => {};
   }),
