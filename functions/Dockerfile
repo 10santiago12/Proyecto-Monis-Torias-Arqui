@@ -38,7 +38,6 @@ RUN npm ci --only=production && \
 
 # Copy built code from builder stage
 COPY --from=builder --chown=nodejs:nodejs /app/src ./src
-COPY --from=builder --chown=nodejs:nodejs /app/firebase.js ./firebase.js
 
 # Switch to non-root user
 USER nodejs
