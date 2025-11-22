@@ -12,6 +12,7 @@ const materialsRoutes = require("./api/materials.routes");
 const usersRoutes = require("./api/users.routes");
 const tutorsRoutes = require("./api/tutors.routes");
 const devRoutes = require("./api/dev.routes");
+const debugRoutes = require("./api/debug.routes"); // 🔧 Debug temporal
 
 // Inicializar Firebase Admin solo una vez
 if (!admin.apps.length) {
@@ -54,6 +55,9 @@ app.use("/payments", paymentsRoutes);
 app.use("/materials", materialsRoutes);
 app.use("/users", usersRoutes);
 app.use("/tutors", tutorsRoutes);
+
+// 🔧 Rutas de debug (accesibles siempre para diagnosticar problemas)
+app.use("/debug", debugRoutes);
 
 // ⚙️ Rutas de desarrollo (SOLO PARA LOCAL - remover en producción)
 if (process.env.NODE_ENV !== 'production') {

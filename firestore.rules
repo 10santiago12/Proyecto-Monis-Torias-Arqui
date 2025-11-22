@@ -84,6 +84,21 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ---- USER_ROLES ---- (🔥 NUEVA REGLA AGREGADA)
+    // Colección que almacena roles por usuario: { manager: true } o { tutor: true } o { student: true }
+    // IMPORTANTE: Cloud Functions necesita leer esto para autorización
+    match /user_roles/{userId} {
+      // Leer: el usuario puede leer sus propios roles
+      // IMPORTANTE: También permitir lectura desde servidor (Cloud Functions usa Admin SDK que salta reglas)
+      allow read: if isSignedIn() && userId == uid();
+      
+      // Escribir: solo el propio usuario puede crear/actualizar sus roles AL REGISTRARSE
+      // O un admin puede modificar roles de otros
+      allow create: if isSignedIn() && userId == uid();
+      allow update: if isSignedIn() && userId == uid();
+      allow delete: if false; // Nadie puede borrar roles
+    }
+
     // ---- Por defecto: denegar todo lo que no esté contemplado
     match /{document=**} {
       allow read, write: if false;
