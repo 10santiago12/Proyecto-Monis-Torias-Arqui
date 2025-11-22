@@ -38,13 +38,10 @@ Thumbs.db
 
 # Documentation
 README.md
-*.md
 
-# Config files (keep only necessary ones in image)
+# Config files not needed for build
 .eslintrc*
 .prettierrc*
-tsconfig*.json
-vite.config.ts
 cypress.config.ts
 
 # Test files
