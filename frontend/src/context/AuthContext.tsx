@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { onAuthStateChanged, type User } from "firebase/auth";
+import { onAuthStateChanged, signOut, type User } from "firebase/auth";
 import { auth } from "../lib/firebase";
 
 type AuthContextType = {
@@ -14,10 +14,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    return onAuthStateChanged(auth, (usr) => {
+    // Listener de autenticación
+    const unsubscribe = onAuthStateChanged(auth, (usr) => {
       setUser(usr);
       setLoading(false);
     });
+
+    // Logout automático al cerrar la pestaña (solo si VITE_SESSION_PERSISTENCE === 'session')
+    const handleBeforeUnload = () => {
+      if (import.meta.env.VITE_SESSION_PERSISTENCE === 'session' && auth.currentUser) {
+        // Usar signOut sin await para que sea instantáneo
+        signOut(auth).catch(console.error);
+      }
+    };
+
+    if (import.meta.env.VITE_SESSION_PERSISTENCE === 'session') {
+      window.addEventListener('beforeunload', handleBeforeUnload);
+    }
+
+    return () => {
+      unsubscribe();
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
   }, []);
 
   return (

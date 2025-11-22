@@ -1,0 +1,38 @@
+# Gitleaks Ignore File
+# Este archivo contiene patrones de falsos positivos que deben ser ignorados
+
+# Firebase config public keys (estos son seguros de exponer)
+VITE_FIREBASE_API_KEY
+VITE_FIREBASE_AUTH_DOMAIN
+VITE_FIREBASE_PROJECT_ID
+VITE_FIREBASE_STORAGE_BUCKET
+VITE_FIREBASE_MESSAGING_SENDER_ID
+VITE_FIREBASE_APP_ID
+VITE_FIREBASE_MEASUREMENT_ID
+
+# Archivos de ejemplo
+.env.example
+*.example
+
+# Archivos de test
+test/**
+__tests__/**
+*.test.js
+*.test.ts
+*.spec.js
+*.spec.ts
+
+# Node modules
+node_modules/**
+
+# Build artifacts
+dist/**
+build/**
+coverage/**
+
+# Firebase emulator data
+.firebase/**
+
+# Documentación
+docs/**
+*.md

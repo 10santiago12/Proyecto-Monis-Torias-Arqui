@@ -1,0 +1,36 @@
+# Gitleaks Configuration
+title = "Gitleaks Config for Proyecto Monis-Torias"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "firebase-api-key"
+description = "Firebase API Key"
+regex = '''AIza[0-9A-Za-z-_]{35}'''
+tags = ["firebase", "api-key"]
+
+[[rules.allowlist]]
+description = "Allow Firebase public API keys (these are safe to expose)"
+regexes = ['''VITE_FIREBASE_API_KEY''']
+paths = ['''.env.example''', '''*.md''']
+
+[[rules]]
+id = "generic-api-key"
+description = "Generic API Key"
+regex = '''(?i)(api[_-]?key|apikey|api[_-]?token|apitoken|access[_-]?key|accesskey)['":\s]*=?\s*['"][0-9a-zA-Z\-_]{20,}['"]'''
+tags = ["api", "key"]
+
+[[rules.allowlist]]
+description = "Allow example files"
+paths = ['''.env.example''', '''*.md''', '''docs/**''']
+
+[[rules]]
+id = "private-key"
+description = "Private Key"
+regex = '''-----BEGIN (RSA |OPENSSH |DSA |EC |PGP )?PRIVATE KEY( BLOCK)?-----'''
+tags = ["private-key"]
+
+[[rules.allowlist]]
+description = "Allow test keys"
+paths = ['''test/**''', '''__tests__/**''']
