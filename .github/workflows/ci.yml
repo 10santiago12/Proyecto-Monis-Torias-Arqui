@@ -141,23 +141,13 @@ jobs:
         with:
           node-version: '20.x'
 
-      - name: Install frontend dependencies
-        working-directory: ./frontend
-        run: npm ci
-
       - name: Install backend dependencies
         working-directory: ./functions
         run: npm ci
 
-      - name: Run frontend tests with coverage
-        working-directory: ./frontend
-        run: npm run test:coverage
-        continue-on-error: true
-
       - name: Run backend tests with coverage
         working-directory: ./functions
-        run: npm run test:unit -- --coverage
-        continue-on-error: true
+        run: npm run test:unit -- --coverage --config=jest.config.ci.js
 
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@master
@@ -319,7 +309,7 @@ jobs:
   allure-report:
     name: Generate Allure Report
     runs-on: ubuntu-latest
-    needs: [backend-tests, frontend-tests]
+    needs: [backend-tests]
     if: always()
     
     steps:
@@ -335,18 +325,9 @@ jobs:
         working-directory: ./functions
         run: npm ci
 
-      - name: Install frontend dependencies
-        working-directory: ./frontend
-        run: npm ci
-
       - name: Run backend tests with Allure
         working-directory: ./functions
         run: npm run test:unit
-        continue-on-error: true
-
-      - name: Run frontend tests with Allure
-        working-directory: ./frontend
-        run: npm run test:run
         continue-on-error: true
 
       - name: Install Allure
@@ -356,7 +337,7 @@ jobs:
         if: always()
         run: |
           mkdir -p allure/allure-report
-          allure generate allure/allure-results --clean -o allure/allure-report || echo "Warning: Allure generation had issues"
+          allure generate allure/allure-results/backend --clean -o allure/allure-report || echo "Warning: Allure generation had issues"
 
       - name: Upload Allure Report
         if: always()
@@ -371,7 +352,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: allure-results
-          path: allure/allure-results
+          path: allure/allure-results/backend
           retention-days: 7
 
   build-status:
