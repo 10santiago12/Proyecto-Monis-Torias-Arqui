@@ -170,7 +170,7 @@ jobs:
         timeout-minutes: 5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        continue-on-error: true
+        continue-on-error: true  # No fallar el pipeline por Quality Gate (para desarrollo)
 
   secrets-scan:
     name: Secrets Scanning (Gitleaks)
