@@ -30,6 +30,20 @@ pids
 coverage
 .nyc_output
 
+# Security Reports
+security/*.html
+security/*.json
+security/*.md
+security/*.xml
+!security/README.md
+!security/zap-config.conf
+
+# Allure Reports
+allure/allure-results/
+allure/allure-report/
+allure/history/
+!allure/README.md
+
 # Grunt / Bower / Legacy
 .grunt
 bower_components

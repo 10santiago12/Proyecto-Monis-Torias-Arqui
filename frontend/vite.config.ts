@@ -20,6 +20,17 @@ export default defineConfig({
         '**/mockData',
         'dist/'
       ]
-    }
+    },
+    reporters: [
+      'default',
+      ['allure-vitest/reporter', {
+        resultsDir: './allure-results',
+        links: {
+          issue: {
+            urlTemplate: 'https://github.com/10santiago12/Proyecto-Monis-Torias-Arqui/issues/%s'
+          }
+        }
+      }]
+    ]
   }
 })

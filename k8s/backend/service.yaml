@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: monis-backend
+  namespace: monis-torias
+  labels:
+    app: monis-backend
+    tier: backend
+spec:
+  type: ClusterIP
+  selector:
+    app: monis-backend
+  ports:
+  - name: http
+    port: 5001
+    targetPort: 5001
+    protocol: TCP
+  sessionAffinity: None

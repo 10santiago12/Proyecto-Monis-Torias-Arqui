@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: monis-backend
+  namespace: monis-torias
+  labels:
+    app: monis-backend
+    tier: backend
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: monis-backend
+  template:
+    metadata:
+      labels:
+        app: monis-backend
+        tier: backend
+    spec:
+      containers:
+      - name: monis-backend
+        image: 10santiago12/monis-backend:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5001
+          name: http
+          protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: backend-config
+        env:
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: "/secrets/serviceAccount.json"
+        volumeMounts:
+        - name: firebase-credentials
+          mountPath: /secrets
+          readOnly: true
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5001
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5001
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+      volumes:
+      - name: firebase-credentials
+        secret:
+          secretName: firebase-credentials
+      restartPolicy: Always

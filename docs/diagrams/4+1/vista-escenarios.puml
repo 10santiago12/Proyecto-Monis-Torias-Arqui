@@ -1,0 +1,227 @@
+@startuml vista-escenarios
+' Vista de Escenarios - Modelo 4+1
+' Muestra los casos de uso principales del sistema
+
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Estudiante" as student
+actor "Tutor" as tutor
+actor "Manager/Admin" as manager
+
+rectangle "Sistema Monis-Torias\nPlataforma de Tutorías" {
+  
+  ' ========== Casos de Uso de Estudiante ==========
+  package "Gestión de Sesiones" {
+    usecase "UC-01: Solicitar Sesión\nde Tutoría" as UC01
+    usecase "UC-02: Ver Mis Sesiones" as UC02
+    usecase "UC-03: Marcar Sesión\ncomo Completada" as UC03
+    usecase "UC-04: Cancelar Sesión" as UC04
+  }
+  
+  package "Gestión de Materiales" {
+    usecase "UC-05: Consultar\nMateriales Disponibles" as UC05
+    usecase "UC-06: Descargar Material" as UC06
+  }
+  
+  ' ========== Casos de Uso de Tutor ==========
+  package "Gestión de Tutorías" {
+    usecase "UC-07: Ver Solicitudes\nde Sesión" as UC07
+    usecase "UC-08: Confirmar Sesión" as UC08
+    usecase "UC-09: Programar Fecha\ny Hora de Sesión" as UC09
+  }
+  
+  package "Gestión de Pagos" {
+    usecase "UC-10: Solicitar Pago\npor Sesión Completada" as UC10
+    usecase "UC-11: Ver Historial\nde Ganancias" as UC11
+  }
+  
+  package "Gestión de Recursos" {
+    usecase "UC-12: Subir Material\nEducativo" as UC12
+    usecase "UC-13: Eliminar Material" as UC13
+  }
+  
+  ' ========== Casos de Uso de Manager ==========
+  package "Administración" {
+    usecase "UC-14: Listar Todos\nlos Tutores" as UC14
+    usecase "UC-15: Asignar Código\na Nuevo Tutor" as UC15
+    usecase "UC-16: Aprobar Solicitud\nde Pago" as UC16
+    usecase "UC-17: Marcar Pago\ncomo Procesado" as UC17
+    usecase "UC-18: Ver Dashboard\nde Métricas" as UC18
+  }
+  
+  ' ========== Casos de Uso Comunes ==========
+  package "Autenticación" {
+    usecase "UC-19: Iniciar Sesión\ncon Email/Password" as UC19
+    usecase "UC-20: Cerrar Sesión" as UC20
+    usecase "UC-21: Recuperar Contraseña" as UC21
+  }
+  
+  ' ========== Sistemas Externos ==========
+  actor "Firebase Authentication" as fbauth
+  actor "Firebase Storage" as fbstorage
+  actor "Firebase Cloud Messaging" as fcm
+  actor "Sistema de Pagos" as payment
+}
+
+' ========== Relaciones Estudiante ==========
+student --> UC01
+student --> UC02
+student --> UC03
+student --> UC04
+student --> UC05
+student --> UC06
+student --> UC19
+student --> UC20
+
+' ========== Relaciones Tutor ==========
+tutor --> UC07
+tutor --> UC08
+tutor --> UC09
+tutor --> UC10
+tutor --> UC11
+tutor --> UC12
+tutor --> UC13
+tutor --> UC19
+tutor --> UC20
+
+' ========== Relaciones Manager ==========
+manager --> UC14
+manager --> UC15
+manager --> UC16
+manager --> UC17
+manager --> UC18
+manager --> UC19
+manager --> UC20
+
+' ========== Includes y Extends ==========
+UC01 ..> UC19: <<include>>\nrequiere autenticación
+UC02 ..> UC19: <<include>>
+UC03 ..> UC19: <<include>>
+UC04 ..> UC19: <<include>>
+UC05 ..> UC19: <<include>>
+UC06 ..> UC19: <<include>>
+UC07 ..> UC19: <<include>>
+UC08 ..> UC19: <<include>>
+UC09 ..> UC08: <<include>>
+UC10 ..> UC19: <<include>>
+UC11 ..> UC19: <<include>>
+UC12 ..> UC19: <<include>>
+UC13 ..> UC19: <<include>>
+UC14 ..> UC19: <<include>>
+UC15 ..> UC19: <<include>>
+UC16 ..> UC19: <<include>>
+UC17 ..> UC19: <<include>>
+UC18 ..> UC19: <<include>>
+
+UC08 ..> fcm: <<extend>>\nnotifica al estudiante
+UC01 ..> fcm: <<extend>>\nnotifica al tutor
+
+UC06 ..> fbstorage: <<uses>>
+UC12 ..> fbstorage: <<uses>>
+UC13 ..> fbstorage: <<uses>>
+
+UC19 ..> fbauth: <<uses>>
+UC20 ..> fbauth: <<uses>>
+UC21 ..> fbauth: <<uses>>
+
+UC16 ..> payment: <<extend>>\nprocesa transacción
+UC17 ..> payment: <<extend>>\nconfirma pago
+
+' ========== Notas de Escenarios Principales ==========
+
+note right of UC01
+  **Flujo Principal:**
+  1. Estudiante ingresa código del tutor
+  2. Estudiante selecciona materia y fecha preferida
+  3. Sistema valida el código
+  4. Sistema crea sesión con estado "requested"
+  5. Sistema notifica al tutor vía FCM
+  6. Estudiante recibe confirmación
+  
+  **Precondiciones:**
+  - Estudiante autenticado
+  - Código de tutor válido
+  
+  **Postcondiciones:**
+  - Sesión creada en Firestore
+  - Notificación enviada al tutor
+end note
+
+note right of UC08
+  **Flujo Principal:**
+  1. Tutor revisa solicitudes pendientes
+  2. Tutor selecciona una sesión
+  3. Tutor programa fecha y hora
+  4. Sistema valida que la sesión está en estado "requested"
+  5. Sistema actualiza estado a "confirmed"
+  6. Sistema notifica al estudiante vía FCM
+  
+  **Precondiciones:**
+  - Tutor autenticado
+  - Sesión existe y está en estado "requested"
+  - Sesión pertenece al tutor
+  
+  **Postcondiciones:**
+  - Sesión actualizada con fecha programada
+  - Estado cambiado a "confirmed"
+  - Notificación enviada al estudiante
+end note
+
+note left of UC15
+  **Flujo Principal:**
+  1. Manager accede al panel de administración
+  2. Manager selecciona "Asignar Código"
+  3. Manager ingresa UID del nuevo tutor y nota
+  4. Sistema genera código único de 4 dígitos
+  5. Sistema asocia código con UID del tutor
+  6. Sistema retorna código generado
+  
+  **Precondiciones:**
+  - Usuario autenticado con rol "manager"
+  - UID del tutor válido
+  
+  **Postcondiciones:**
+  - Código creado en colección tutors_codes
+  - Perfil de tutor actualizado/creado
+end note
+
+note left of UC16
+  **Flujo Principal:**
+  1. Manager revisa solicitudes de pago
+  2. Manager selecciona una solicitud
+  3. Manager aprueba el pago
+  4. Sistema valida que el pago está en estado "requested"
+  5. Sistema actualiza estado a "approved"
+  6. Sistema registra fecha de aprobación
+  
+  **Precondiciones:**
+  - Usuario autenticado con rol "manager"
+  - Pago existe y está en estado "requested"
+  - Sesión asociada está en estado "done"
+  
+  **Postcondiciones:**
+  - Pago actualizado a estado "approved"
+  - Registro de auditoría creado
+end note
+
+note bottom of UC03
+  **Flujo Principal:**
+  1. Estudiante accede a "Mis Sesiones"
+  2. Estudiante selecciona sesión confirmada
+  3. Estudiante marca como completada
+  4. Sistema valida que la sesión está en estado "confirmed"
+  5. Sistema actualiza estado a "done"
+  6. Sistema registra timestamp de finalización
+  
+  **Precondiciones:**
+  - Estudiante autenticado
+  - Sesión en estado "confirmed"
+  - Sesión pertenece al estudiante
+  
+  **Postcondiciones:**
+  - Sesión marcada como "done"
+  - Tutor puede solicitar pago
+end note
+
+@enduml

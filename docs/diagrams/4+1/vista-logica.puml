@@ -1,0 +1,221 @@
+@startuml vista-logica
+' Vista Lógica - Modelo 4+1
+' Muestra la estructura lógica del sistema mediante diagramas de clases
+
+!define RECTANGLE class
+
+package "Frontend - React Application" {
+  class Dashboard {
+    +user: User
+    +sessions: Session[]
+    +materials: Material[]
+    +renderContent(): void
+    +handleSessionClick(id: string): void
+  }
+  
+  class Login {
+    +email: string
+    +password: string
+    +handleLogin(): Promise<void>
+    +validateCredentials(): boolean
+  }
+  
+  class AuthContext {
+    +currentUser: User | null
+    +loading: boolean
+    +signIn(email, password): Promise<void>
+    +signOut(): Promise<void>
+  }
+  
+  class useAuth {
+    +user: User
+    +loading: boolean
+    +error: Error | null
+  }
+  
+  class ProtectedRoute {
+    +requiredRoles: string[]
+    +canActivate(): boolean
+  }
+}
+
+package "Backend - Firebase Functions API" {
+  package "Routes Layer" {
+    class SessionsRoutes {
+      +GET /sessions
+      +POST /sessions/request
+      +POST /sessions/:id/confirm
+      +POST /sessions/:id/mark-done
+    }
+    
+    class TutorsRoutes {
+      +GET /tutors
+      +POST /tutors/:uid/assign-code
+    }
+    
+    class PaymentsRoutes {
+      +POST /payments/request
+      +POST /payments/:id/approve
+      +POST /payments/:id/mark-paid
+    }
+    
+    class MaterialsRoutes {
+      +GET /materials/:courseId
+      +POST /materials/upload-url
+      +GET /materials/:id/download-url
+    }
+  }
+  
+  package "Middlewares" {
+    class AuthMiddleware {
+      +verifyToken(token: string): User
+      +extractRoles(user: User): string[]
+      +attachUserToRequest(req, user): void
+    }
+    
+    class RoleMiddleware {
+      +requireRoles(roles: string[]): Middleware
+      +checkPermissions(user, roles): boolean
+    }
+    
+    class ErrorMiddleware {
+      +handleError(error, req, res): void
+      +logError(error): void
+    }
+  }
+  
+  package "Services Layer" {
+    class SessionsService {
+      +requestSession(data): Session
+      +confirmByTutor(sessionId, scheduledAt): Session
+      +markDoneByStudent(sessionId): Session
+      +listForUser(user): Session[]
+      +getById(id): Session
+    }
+    
+    class TutorsService {
+      +listAllTutors(): Tutor[]
+      +assignCodeToTutor(uid, note): TutorCode
+    }
+    
+    class PaymentsService {
+      +requestPayout(sessionId, tutorId): Payment
+      +approvePayout(paymentId): Payment
+      +markPaid(paymentId): Payment
+      -_calcAmount(session): number
+    }
+    
+    class EarningsService {
+      +creditFromPayout(payment): Earning
+      -_calculateFee(amount): number
+    }
+    
+    class NotificationsService {
+      +notifyTutorSessionRequested(tutorId): void
+      +notifyStudentSessionConfirmed(studentId): void
+    }
+  }
+  
+  package "Repository Layer" {
+    class SessionsRepo {
+      +create(data): string
+      +getById(id): Session | null
+      +update(id, data): Session
+      +getAll(): Session[]
+      +getByTutor(tutorId): Session[]
+      +getByStudent(studentId): Session[]
+    }
+    
+    class TutorsRepo {
+      +createCode(note): string
+      +claimCode(code, uid): void
+      +ensureTutorProfile(uid, data): void
+      +getByCode(code): TutorInfo | null
+      +listAll(): Tutor[]
+      -_genUniqueCode(): string
+    }
+    
+    class PaymentsRepo {
+      +create(data): string
+      +getById(id): Payment | null
+      +update(id, data): Payment
+    }
+    
+    class EarningsRepo {
+      +create(data): string
+      +getByPaymentId(paymentId): Earning | null
+      +listByTutor(tutorId): Earning[]
+    }
+  }
+}
+
+package "Firebase Services" {
+  class Firestore {
+    +collection(name): CollectionReference
+    +doc(path): DocumentReference
+    +runTransaction(callback): Promise<any>
+  }
+  
+  class Authentication {
+    +verifyIdToken(token): DecodedToken
+    +setCustomUserClaims(uid, claims): Promise<void>
+    +getUser(uid): UserRecord
+  }
+  
+  class CloudStorage {
+    +bucket(): Bucket
+    +getSignedUrl(file): Promise<string>
+    +upload(file, path): Promise<void>
+  }
+}
+
+' Relationships - Frontend
+Dashboard --> AuthContext: uses
+Login --> AuthContext: updates
+ProtectedRoute --> useAuth: checks
+useAuth --> AuthContext: consumes
+
+' Relationships - Backend Layers
+SessionsRoutes --> AuthMiddleware: protected by
+SessionsRoutes --> RoleMiddleware: uses
+SessionsRoutes --> SessionsService: calls
+SessionsService --> SessionsRepo: delegates to
+SessionsRepo --> Firestore: persists to
+
+TutorsRoutes --> TutorsService: calls
+TutorsService --> TutorsRepo: delegates to
+TutorsRepo --> Firestore: persists to
+
+PaymentsRoutes --> PaymentsService: calls
+PaymentsService --> PaymentsRepo: delegates to
+PaymentsService --> EarningsService: uses
+EarningsRepo --> Firestore: persists to
+
+MaterialsRoutes --> CloudStorage: uses
+
+' Firebase Dependencies
+AuthMiddleware --> Authentication: verifies
+SessionsService --> NotificationsService: notifies
+
+note right of SessionsService
+  Business Logic Layer
+  - Validates session state transitions
+  - Enforces business rules
+  - Coordinates notifications
+end note
+
+note right of SessionsRepo
+  Data Access Layer
+  - Abstracts Firestore operations
+  - Handles data transformation
+  - Manages transactions
+end note
+
+note left of Dashboard
+  Presentation Layer
+  - User interface components
+  - State management
+  - Event handling
+end note
+
+@enduml
