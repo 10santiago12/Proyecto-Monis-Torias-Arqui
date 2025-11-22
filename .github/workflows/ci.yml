@@ -44,10 +44,16 @@ jobs:
         run: npm run test:integration
         continue-on-error: true
 
-      - name: Generate coverage report
+      - name: Generate coverage report for SonarQube
         working-directory: ./functions
-        run: npm run test:unit -- --coverage
-        continue-on-error: true
+        run: npm run test:unit -- --coverage --config=jest.config.ci.js
+
+      - name: Upload coverage artifact for SonarQube
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: functions/coverage
+          retention-days: 1
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -129,6 +135,7 @@ jobs:
   sonarqube:
     name: SonarQube Analysis
     runs-on: ubuntu-latest
+    needs: [backend-tests]
     
     steps:
       - name: Checkout code
@@ -136,18 +143,17 @@ jobs:
         with:
           fetch-depth: 0  # Shallow clones should be disabled for better analysis
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Download coverage artifact
+        uses: actions/download-artifact@v4
         with:
-          node-version: '20.x'
+          name: backend-coverage
+          path: functions/coverage
 
-      - name: Install backend dependencies
-        working-directory: ./functions
-        run: npm ci
-
-      - name: Run backend tests with coverage
-        working-directory: ./functions
-        run: npm run test:unit -- --coverage --config=jest.config.ci.js
+      - name: Verify coverage file exists
+        run: |
+          echo "Checking coverage files..."
+          ls -lah functions/coverage/
+          cat functions/coverage/lcov.info | head -20
 
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@master
