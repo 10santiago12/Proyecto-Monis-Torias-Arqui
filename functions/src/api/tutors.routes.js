@@ -1,6 +1,7 @@
 // functions/src/api/tutors.routes.js
 const express = require("express");
 const { z } = require("zod");
+const { authMiddleware } = require("../middlewares/auth.middleware");
 const { requireRoles } = require("../middlewares/role.middleware");
 const { TutorsService } = require("../services/tutors.service");
 
@@ -8,7 +9,7 @@ const router = express.Router();
 const service = new TutorsService();
 
 // Listar todos los tutores
-router.get("/", requireRoles("manager"), async (req, res, next) => {
+router.get("/", authMiddleware, requireRoles("manager"), async (req, res, next) => {
   try {
     const list = await service.listAllTutors();
     return res.json(list);
@@ -21,7 +22,7 @@ router.get("/", requireRoles("manager"), async (req, res, next) => {
 const assignSchema = z.object({
   note: z.string().optional(),
 });
-router.post("/:uid/assign-code", requireRoles("manager"), async (req, res, next) => {
+router.post("/:uid/assign-code", authMiddleware, requireRoles("manager"), async (req, res, next) => {
   try {
     const { note } = assignSchema.parse(req.body || {});
     const { uid } = req.params;

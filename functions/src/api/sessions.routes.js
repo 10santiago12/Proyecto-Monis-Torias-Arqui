@@ -51,7 +51,7 @@ router.post("/request", authMiddleware, async (req, res, next) => {
 
 /** POST /api/sessions/:id/confirm (solo tutor) */
 const confirmSchema = z.object({ scheduledAt: z.string().min(10) });
-router.post("/:id/confirm", requireRoles("tutor"), async (req, res, next) => {
+router.post("/:id/confirm", authMiddleware, requireRoles("tutor"), async (req, res, next) => {
   try {
     const dto = confirmSchema.parse(req.body);
     const r = await service.confirmByTutor(req.user, req.params.id, dto);

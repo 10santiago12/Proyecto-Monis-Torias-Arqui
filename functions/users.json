@@ -1,0 +1,61 @@
+{"users": [
+{
+  "localId": "E1sxQ5MjuaexqRCCu05WdRcBLkE3",
+  "email": "luisramu@unisabana.edu.co",
+  "emailVerified": false,
+  "passwordHash": "ds64SKuME1M0lzAPubS9Q9E987BvM+IUCF9VdtOCYdHcFl5y7CLd1eexEU+MxBkJoHFAK9I7t8W1MShGdAryDw==",
+  "salt": "nIy4L8+XTcu0yA==",
+  "lastSignedInAt": "1755727667469",
+  "createdAt": "1755565324229",
+  "providerUserInfo": []
+},
+{
+  "localId": "FRGDhvOgO8Wke5olWqn7W5YfsdK2",
+  "email": "estudiante@gmail.com",
+  "emailVerified": false,
+  "passwordHash": "XLcxSFsK6NnUZE2f6+N1XaKwGqqVTz1dBbhLA13dm8xRJd0zM0KMxQwPcCs38sCB45C9dNALs97uSJyvC9Y3BQ==",
+  "salt": "1itHKB1sHwTlHg==",
+  "lastSignedInAt": "1763752892835",
+  "createdAt": "1755531689220",
+  "providerUserInfo": []
+},
+{
+  "localId": "FWTWVMKt6hUn9Jj5cDWTlBSy7Pq2",
+  "email": "usuario@usuario.com",
+  "emailVerified": false,
+  "passwordHash": "4gCjpRNoUZ8kGf9unQIMqJ13iAkRa71TOocXL3w507jVNVkaHR6BSOdzx4HEamFVeq+uDsvwfx646QEPswQvag==",
+  "salt": "yhZPIlCD7U8tVA==",
+  "lastSignedInAt": "1763655136596",
+  "createdAt": "1763655136596",
+  "providerUserInfo": []
+},
+{
+  "localId": "KS8tRHkWPpbfknrmXfkNqZozMoZ2",
+  "email": "admin@gmail.com",
+  "emailVerified": false,
+  "passwordHash": "kWRHs0oNxJYGvOr9w1zRZlqgnoDmrccsWVsRmRQJ8WKUOJVQ+0srJ+dYFCXf8Xi+DtTatZM+2JceYGPq7MAyWg==",
+  "salt": "IcuP3sww5yeCFA==",
+  "lastSignedInAt": "1763762885861",
+  "createdAt": "1755569972335",
+  "providerUserInfo": []
+},
+{
+  "localId": "pq2buA9v7Uee7lPlEeFfpTUI85q1",
+  "email": "mariagarccas@unisabana.edu.co",
+  "emailVerified": false,
+  "passwordHash": "MMrPLvJZdq05HehwqGMoAIvYow4EiSnxgC8ZtvHWnpBvFCjW+nvDCJ81Q6Nv3ZDnuPiHBiNWfkxDjK1AL6RTsw==",
+  "salt": "swnVLea1hR1u2Q==",
+  "lastSignedInAt": "1755730769496",
+  "createdAt": "1755730769496",
+  "providerUserInfo": []
+},
+{
+  "localId": "q2PxWpjn9DUi6aCjwvwsS9G9N1i1",
+  "email": "tutor@gmail.com",
+  "emailVerified": false,
+  "passwordHash": "5mkXyNi+f/FbscPLbXlfczoLw6mjSZNjJhEGNfFglD1z4G5bQXgUkqSwkGFhkyMc1U0Dn5tDzxupJU/Fepd05A==",
+  "salt": "/+S23YZezegUdA==",
+  "lastSignedInAt": "1763752922957",
+  "createdAt": "1755571080347",
+  "providerUserInfo": []
+}]}

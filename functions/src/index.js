@@ -11,6 +11,7 @@ const paymentsRoutes = require("./api/payments.routes");
 const materialsRoutes = require("./api/materials.routes");
 const usersRoutes = require("./api/users.routes");
 const tutorsRoutes = require("./api/tutors.routes");
+const devRoutes = require("./api/dev.routes");
 
 // Inicializar Firebase Admin solo una vez
 if (!admin.apps.length) {
@@ -18,7 +19,17 @@ if (!admin.apps.length) {
 }
 
 const app = express();
-app.use(cors({ origin: true }));
+
+// Configuración CORS más permisiva para desarrollo
+const corsOptions = {
+  origin: true,
+  credentials: true,
+  optionsSuccessStatus: 200,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Logging middleware para debug
@@ -26,6 +37,9 @@ app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   next();
 });
+
+// Manejar preflight requests explícitamente
+app.options('*', cors(corsOptions));
 
 // ✅ Ruta pública de health check (sin prefijo /api porque Firebase ya lo monta en /api)
 app.get("/health", (_req, res) => {
@@ -40,6 +54,12 @@ app.use("/payments", paymentsRoutes);
 app.use("/materials", materialsRoutes);
 app.use("/users", usersRoutes);
 app.use("/tutors", tutorsRoutes);
+
+// ⚙️ Rutas de desarrollo (SOLO PARA LOCAL - remover en producción)
+if (process.env.NODE_ENV !== 'production') {
+  app.use("/dev", devRoutes);
+  console.log("⚠️  Dev routes enabled at /dev");
+}
 
 // ✅ Middleware de errores
 app.use(errorMiddleware);

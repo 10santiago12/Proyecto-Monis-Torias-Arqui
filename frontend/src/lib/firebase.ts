@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, setPersistence, browserSessionPersistence, browserLocalPersistence } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 // Configuración de Firebase usando variables de entorno
@@ -36,3 +36,18 @@ const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+// Configurar persistencia de sesión
+// Opciones:
+// - browserLocalPersistence: La sesión persiste incluso después de cerrar el navegador (DEFAULT)
+// - browserSessionPersistence: La sesión se borra al cerrar la pestaña/navegador
+// - inMemoryPersistence: No persiste, solo en memoria (no recomendado)
+
+// Cambiar a SESSION si quieres que la sesión expire al cerrar el navegador
+const persistence = import.meta.env.VITE_SESSION_PERSISTENCE === 'session' 
+  ? browserSessionPersistence 
+  : browserLocalPersistence;
+
+setPersistence(auth, persistence).catch((error) => {
+  console.error('Error setting auth persistence:', error);
+});

@@ -14,9 +14,20 @@ async function authMiddleware(req,res,next) {
     const idToken=parts[1];
     const decoded=await admin.auth().verifyIdToken(idToken);
     const roles=decoded.roles||await getRolesFromDb(decoded.uid);
+    
+    // DEBUG: Log detallado de roles
+    console.log("🔐 Auth Debug:", {
+      uid: decoded.uid,
+      email: decoded.email,
+      rolesFromToken: decoded.roles,
+      rolesFromDb: roles,
+      finalRoles: roles || {}
+    });
+    
     req.user={uid:decoded.uid,roles:roles||{}};
     return next();
   } catch (err) {
+    console.error("❌ Auth Error:", err.message);
     return res.status(401).json({message:"Unauthorized"});
   }
 }
