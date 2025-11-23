@@ -1,0 +1,28 @@
+@startuml C4_Context
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Diagrama de Contexto - Sistema Monis-Torias (Nivel 1)
+
+Person(estudiante, "Estudiante", "Usuario que solicita tutorías y sube materiales")
+Person(tutor, "Tutor", "Usuario que ofrece tutorías y genera códigos para sesiones")
+Person(manager, "Manager/Admin", "Administrador que gestiona tutores, pagos y reportes")
+
+System(monisToriasApp, "Sistema Monis-Torias", "Plataforma de gestión de tutorías académicas que conecta estudiantes con tutores")
+
+System_Ext(firebaseAuth, "Firebase Authentication", "Servicio de autenticación y gestión de usuarios")
+System_Ext(firestore, "Cloud Firestore", "Base de datos NoSQL para almacenar sesiones, pagos, usuarios")
+System_Ext(cloudStorage, "Firebase Storage", "Almacenamiento de materiales didácticos (PDFs, imágenes)")
+System_Ext(emailService, "Servicio de Email", "Envío de notificaciones por correo electrónico")
+
+Rel(estudiante, monisToriasApp, "Solicita tutorías, sube materiales", "HTTPS")
+Rel(tutor, monisToriasApp, "Confirma sesiones, genera códigos", "HTTPS")
+Rel(manager, monisToriasApp, "Gestiona tutores, aprueba pagos", "HTTPS")
+
+Rel(monisToriasApp, firebaseAuth, "Autentica usuarios, valida tokens JWT", "HTTPS")
+Rel(monisToriasApp, firestore, "Lee/escribe sesiones, pagos, usuarios", "gRPC")
+Rel(monisToriasApp, cloudStorage, "Almacena/descarga materiales", "HTTPS")
+Rel(monisToriasApp, emailService, "Envía notificaciones", "HTTPS")
+
+@enduml

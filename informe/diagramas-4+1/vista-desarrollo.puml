@@ -1,0 +1,282 @@
+@startuml vista-desarrollo
+' Vista de Desarrollo - Modelo 4+1
+' Muestra la organización del código y las dependencias entre módulos
+
+!define PACKAGE package
+!define COMPONENT component
+
+title Organización de Módulos y Dependencias - Proyecto Monis-Torias
+
+PACKAGE "Frontend Module" {
+  [React Application] as react
+  
+  PACKAGE "src/" {
+    [pages/] as pages
+    [components/] as components
+    [context/] as context
+    [hooks/] as hooks
+    [services/] as services
+    [routes/] as routes
+    [assets/] as assets
+  }
+  
+  PACKAGE "pages/" {
+    [Dashboard.tsx] as dashboard
+    [Login.tsx] as login
+    [Admin.tsx] as admin
+    [Tutor.tsx] as tutor
+    [Materials.tsx] as materials
+    [RequestSession.tsx] as reqsession
+    [Session.tsx] as session
+  }
+  
+  PACKAGE "context/" {
+    [AuthContext.tsx] as authctx
+  }
+  
+  PACKAGE "hooks/" {
+    [useAuth.tsx] as useauth
+  }
+  
+  PACKAGE "services/" {
+    [api.ts] as api
+  }
+  
+  PACKAGE "routes/" {
+    [ProtectedRoute.tsx] as protectedroute
+    [GuestRoute.tsx] as guestroute
+    [index.tsx] as routeindex
+  }
+}
+
+PACKAGE "Backend Module" {
+  [Firebase Functions] as functions
+  
+  PACKAGE "functions/src/" {
+    [index.js] as index
+    [firebase.js] as firebase
+  }
+  
+  PACKAGE "api/" {
+    [sessions.routes.js] as sessroutes
+    [tutors.routes.js] as tutroutes
+    [payments.routes.js] as payroutes
+    [materials.routes.js] as matroutes
+    [users.routes.js] as userroutes
+  }
+  
+  PACKAGE "middlewares/" {
+    [auth.middleware.js] as authmw
+    [role.middleware.js] as rolemw
+    [error.middleware.js] as errmw
+  }
+  
+  PACKAGE "services/" {
+    [sessions.service.js] as sesssvc
+    [tutors.service.js] as tutsvc
+    [payments.service.js] as paysvc
+    [notifications.service.js] as notifsvc
+    [earnings.service.js] as earnsvc
+  }
+  
+  PACKAGE "repos/" {
+    [sessions.repo.js] as sessrepo
+    [tutors.repo.js] as tutrepo
+    [payments.repo.js] as payrepo
+    [earnings.repo.js] as earnrepo
+    [users.repo.js] as usersrepo
+  }
+  
+  PACKAGE "adapters/" {
+    [payment.adapter.js] as payadapter
+    [notificaction.adapter.mock.js] as notifadapter
+  }
+}
+
+PACKAGE "Testing Infrastructure" {
+  [functions/test/] as functests
+  [frontend/src/__tests__/] as fronttests
+  
+  PACKAGE "functions/test/" {
+    [test/unit/] as unittests
+    [test/integration/] as inttests
+    [test/setup.js] as testsetup
+  }
+  
+  PACKAGE "frontend/src/__tests__/" {
+    [__tests__/components/] as compotests
+    [__tests__/services/] as svctests
+    [__tests__/hooks/] as hooktests
+  }
+  
+  [cypress/] as e2etests
+  [postman/] as apitests
+  [load-tests/] as loadtests
+}
+
+PACKAGE "Configuration" {
+  [firebase.json] as firebasejson
+  [package.json] as packagejson
+  [.env] as envfile
+  [tsconfig.json] as tsconfig
+  [vite.config.ts] as viteconfig
+  [jest.config.js] as jestconfig
+}
+
+PACKAGE "DevSecOps" {
+  [.github/workflows/ci.yml] as ci
+  [sonar-project.properties] as sonar
+  [.gitleaks.toml] as gitleaks
+  [Dockerfile (frontend)] as frontdocker
+  [Dockerfile (backend)] as backdocker
+}
+
+PACKAGE "Documentation" {
+  [docs/adr/] as adr
+  [docs/diagrams/c4/] as c4
+  [docs/diagrams/4+1/] as model41
+  [README.md] as readme
+}
+
+PACKAGE "External Dependencies" {
+  cloud "Firebase Platform" {
+    [Firestore] as firestore
+    [Firebase Auth] as fbauth
+    [Cloud Storage] as storage
+    [Cloud Functions Runtime] as funcruntime
+  }
+  
+  cloud "NPM Packages" {
+    [React 19] as reactpkg
+    [Express 4.19] as express
+    [Vite 7] as vite
+    [Vitest 4] as vitest
+    [Jest 30] as jest
+    [TypeScript 5] as typescript
+  }
+}
+
+' Frontend Dependencies
+pages --> context: uses
+pages --> hooks: uses
+pages --> services: uses
+hooks --> context: consumes
+services --> api: makes HTTP calls
+routes --> hooks: checks auth
+
+dashboard --> api
+login --> authctx
+admin --> api
+tutor --> api
+materials --> api
+
+protectedroute --> useauth
+guestroute --> useauth
+routeindex --> protectedroute
+routeindex --> guestroute
+
+' Backend Dependencies
+index --> sessroutes: mounts
+index --> tutroutes: mounts
+index --> payroutes: mounts
+index --> matroutes: mounts
+index --> userroutes: mounts
+
+sessroutes --> authmw: protected by
+sessroutes --> rolemw: uses
+sessroutes --> sesssvc: calls
+tutroutes --> authmw: protected by
+tutroutes --> rolemw: uses
+tutroutes --> tutsvc: calls
+payroutes --> authmw: protected by
+payroutes --> paysvc: calls
+
+sesssvc --> sessrepo: delegates to
+sesssvc --> notifsvc: notifies
+tutsvc --> tutrepo: delegates to
+paysvc --> payrepo: delegates to
+paysvc --> earnsvc: uses
+
+sessrepo --> firebase: uses
+tutrepo --> firebase: uses
+payrepo --> firebase: uses
+earnrepo --> firebase: uses
+
+authmw --> firebase: verifies token
+rolemw --> authmw: depends on
+errmw --> index: handles errors
+
+notifsvc --> notifadapter: uses
+paysvc --> payadapter: uses
+
+' Testing Dependencies
+functests --> firebase: mocks
+functests --> sesssvc: tests
+functests --> sesssvc: tests
+unittests --> sessrepo: tests
+inttests --> index: tests API
+
+fronttests --> pages: tests
+compotests --> dashboard: tests
+svctests --> api: tests
+hooktests --> useauth: tests
+
+e2etests --> react: e2e tests
+apitests --> functions: API tests
+loadtests --> functions: load tests
+
+' CI/CD Dependencies
+ci --> functests: runs
+ci --> fronttests: runs
+ci --> e2etests: runs
+ci --> sonar: analyzes
+ci --> gitleaks: scans
+ci --> frontdocker: builds
+ci --> backdocker: builds
+
+' External Dependencies
+api --> funcruntime: deployed to
+firebase --> firestore: connects to
+firebase --> fbauth: connects to
+firebase --> storage: connects to
+
+react --> reactpkg: built with
+react --> vite: bundled by
+fronttests --> vitest: tested with
+functions --> express: built with
+functests --> jest: tested with
+
+note right of sessroutes
+  **Patrón de Arquitectura:**
+  Routes → Middlewares → Services → Repos
+  
+  - Routes: Definición de endpoints HTTP
+  - Middlewares: Auth, roles, error handling
+  - Services: Lógica de negocio
+  - Repos: Acceso a datos (Firestore)
+end note
+
+note left of pages
+  **Patrón de Arquitectura Frontend:**
+  Pages → Hooks → Context → Services → API
+  
+  - Pages: Componentes de página
+  - Hooks: Lógica reutilizable
+  - Context: Estado global (Auth)
+  - Services: HTTP client
+  - API: Backend REST endpoints
+end note
+
+note bottom of ci
+  **Pipeline CI/CD:**
+  1. Lint & Format
+  2. Unit Tests (Backend & Frontend)
+  3. Integration Tests
+  4. E2E Tests
+  5. Security Scans (SAST, Secrets, Containers)
+  6. SonarQube Analysis
+  7. Docker Build
+  8. Deploy (Firebase Hosting + Functions)
+end note
+
+@enduml

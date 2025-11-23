@@ -1,0 +1,91 @@
+@startuml C4_Component
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+LAYOUT_TOP_DOWN()
+LAYOUT_WITH_LEGEND()
+
+title Diagrama de Componentes - API Backend (Nivel 3)
+
+Container(webApp, "Web Application", "React SPA", "Frontend de la aplicación")
+
+Container_Boundary(apiBackend, "API Backend (Firebase Functions)") {
+    Component(expressApp, "Express Application", "Express.js", "API REST principal")
+    
+    ' Routes
+    Component(sessionsRoutes, "Sessions Routes", "Express Router", "Endpoints para gestión de sesiones (/api/sessions)")
+    Component(paymentsRoutes, "Payments Routes", "Express Router", "Endpoints para solicitudes de pago (/api/payments)")
+    Component(tutorsRoutes, "Tutors Routes", "Express Router", "Endpoints para gestión de tutores (/api/tutors)")
+    Component(usersRoutes, "Users Routes", "Express Router", "Endpoints para gestión de usuarios (/api/users)")
+    Component(materialsRoutes, "Materials Routes", "Express Router", "Endpoints para materiales (/api/materials)")
+    
+    ' Middlewares
+    Component(authMiddleware, "Auth Middleware", "Middleware", "Verifica token JWT de Firebase Auth")
+    Component(roleMiddleware, "Role Middleware", "Middleware", "Valida roles (student, tutor, manager)")
+    Component(errorMiddleware, "Error Middleware", "Middleware", "Manejo centralizado de errores")
+    
+    ' Services (Business Logic)
+    Component(sessionsService, "Sessions Service", "Business Logic", "Lógica de negocio para sesiones (request, confirm, mark-done)")
+    Component(paymentsService, "Payments Service", "Business Logic", "Lógica de pagos (request, approve, mark-paid)")
+    Component(tutorsService, "Tutors Service", "Business Logic", "Lógica de tutores (assign-code, list)")
+    Component(usersService, "Users Service", "Business Logic", "Lógica de usuarios (bootstrap, upgrade-to-tutor)")
+    Component(materialsService, "Materials Service", "Business Logic", "Lógica de materiales (upload-url, download-url)")
+    Component(notificationsService, "Notifications Service", "Adapter", "Envía notificaciones por email")
+    Component(earningsService, "Earnings Service", "Business Logic", "Gestión de earnings de tutores")
+    
+    ' Repositories (Data Access)
+    Component(sessionsRepo, "Sessions Repository", "Data Access", "CRUD de sesiones en Firestore")
+    Component(paymentsRepo, "Payments Repository", "Data Access", "CRUD de pagos en Firestore")
+    Component(tutorsRepo, "Tutors Repository", "Data Access", "CRUD de tutores y códigos en Firestore")
+    Component(usersRepo, "Users Repository", "Data Access", "CRUD de usuarios en Firestore")
+    Component(materialsRepo, "Materials Repository", "Data Access", "CRUD de materiales en Firestore")
+    Component(earningsRepo, "Earnings Repository", "Data Access", "CRUD de earnings en Firestore")
+}
+
+ContainerDb(firestore, "Cloud Firestore", "NoSQL Database", "Base de datos")
+Container(firebaseAuth, "Firebase Auth", "Authentication", "Servicio de autenticación")
+Container(firebaseStorage, "Firebase Storage", "Object Storage", "Almacenamiento de archivos")
+
+' Relaciones Web App → Routes
+Rel(webApp, sessionsRoutes, "POST /sessions/request, GET /sessions", "HTTPS/JSON")
+Rel(webApp, paymentsRoutes, "POST /payments/request", "HTTPS/JSON")
+Rel(webApp, tutorsRoutes, "GET /tutors, POST /tutors/:uid/assign-code", "HTTPS/JSON")
+Rel(webApp, materialsRoutes, "POST /materials/upload-url", "HTTPS/JSON")
+
+' Relaciones Routes → Middlewares → Services
+Rel(sessionsRoutes, authMiddleware, "Valida autenticación")
+Rel(tutorsRoutes, roleMiddleware, "Valida rol manager")
+Rel(authMiddleware, firebaseAuth, "Verifica token JWT")
+Rel(roleMiddleware, firestore, "Lee roles de user_roles")
+
+Rel(sessionsRoutes, sessionsService, "Llama lógica de negocio")
+Rel(paymentsRoutes, paymentsService, "Llama lógica de negocio")
+Rel(tutorsRoutes, tutorsService, "Llama lógica de negocio")
+Rel(usersRoutes, usersService, "Llama lógica de negocio")
+Rel(materialsRoutes, materialsService, "Llama lógica de negocio")
+
+' Relaciones Services → Repositories
+Rel(sessionsService, sessionsRepo, "CRUD operaciones")
+Rel(paymentsService, paymentsRepo, "CRUD operaciones")
+Rel(paymentsService, earningsService, "Genera earnings")
+Rel(tutorsService, tutorsRepo, "CRUD operaciones")
+Rel(usersService, usersRepo, "CRUD operaciones")
+Rel(materialsService, materialsRepo, "CRUD operaciones")
+Rel(earningsService, earningsRepo, "CRUD operaciones")
+
+' Relaciones Services → Otros Services
+Rel(sessionsService, notificationsService, "Envía notificaciones")
+Rel(paymentsService, notificationsService, "Envía notificaciones")
+Rel(materialsService, firebaseStorage, "Genera signed URLs")
+
+' Relaciones Repositories → Firestore
+Rel(sessionsRepo, firestore, "Lee/escribe sessions")
+Rel(paymentsRepo, firestore, "Lee/escribe payments")
+Rel(tutorsRepo, firestore, "Lee/escribe tutors")
+Rel(usersRepo, firestore, "Lee/escribe users")
+Rel(materialsRepo, firestore, "Lee/escribe materials")
+Rel(earningsRepo, firestore, "Lee/escribe earnings")
+
+' Error handling
+Rel(expressApp, errorMiddleware, "Maneja errores")
+
+@enduml

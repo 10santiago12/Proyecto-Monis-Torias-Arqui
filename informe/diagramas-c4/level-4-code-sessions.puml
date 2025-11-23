@@ -1,0 +1,107 @@
+@startuml C4_Code
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Diagrama de Código - Sessions Service (Nivel 4)
+
+package "Sessions Service" {
+    class SessionsService {
+        - sessionsRepo: SessionsRepo
+        - tutorsRepo: TutorsRepo
+        - usersRepo: UsersRepo
+        - notificationsService: NotificationsService
+        + constructor()
+        + listForUser(user): Promise<Session[]>
+        + requestSession(user, dto): Promise<Session>
+        + confirmByTutor(user, sessionId, dto): Promise<Session>
+        + markDoneByStudent(user, sessionId): Promise<Session>
+        - _validateTutorCode(code): void
+        - _notifyParties(session): Promise<void>
+    }
+    
+    class SessionsRepo {
+        - db: Firestore
+        + constructor()
+        + create(data): Promise<Session>
+        + getById(id): Promise<Session>
+        + updateById(id, data): Promise<Session>
+        + listByStudentId(studentId): Promise<Session[]>
+        + listByTutorId(tutorId): Promise<Session[]>
+        + listAll(): Promise<Session[]>
+    }
+    
+    class TutorsRepo {
+        - db: Firestore
+        + constructor()
+        + getByCode(code): Promise<Tutor>
+        + getByUid(uid): Promise<Tutor>
+        + createCode(tutorId, managerId, note): Promise<Code>
+    }
+    
+    class NotificationsService {
+        + constructor()
+        + notifyTutor(tutor, session): Promise<void>
+        + notifyStudent(student, session): Promise<void>
+        + notifyManager(manager, payment): Promise<void>
+    }
+    
+    interface Session {
+        + id: string
+        + studentId: string
+        + tutorId: string
+        + status: 'pending' | 'confirmed' | 'done' | 'cancelled'
+        + subject: string
+        + scheduledAt?: string
+        + createdAt: Timestamp
+        + updatedAt: Timestamp
+    }
+    
+    interface SessionRequestDTO {
+        + tutorCode: string
+        + subject: string
+        + description?: string
+    }
+    
+    interface SessionConfirmDTO {
+        + scheduledAt: string
+    }
+}
+
+' Relaciones
+SessionsService --> SessionsRepo : uses
+SessionsService --> TutorsRepo : uses
+SessionsService --> NotificationsService : uses
+SessionsService ..> Session : creates
+SessionsService ..> SessionRequestDTO : validates
+SessionsService ..> SessionConfirmDTO : validates
+
+SessionsRepo ..> Session : returns
+TutorsRepo ..> Tutor : returns
+
+note right of SessionsService::requestSession
+  1. Valida tutorCode (4 dígitos)
+  2. Busca tutor en TutorsRepo
+  3. Crea sesión con status 'pending'
+  4. Notifica al tutor
+  5. Retorna sesión creada
+end note
+
+note right of SessionsService::confirmByTutor
+  1. Valida que user sea tutor
+  2. Busca sesión en SessionsRepo
+  3. Valida que tutorId == user.uid
+  4. Actualiza status a 'confirmed'
+  5. Actualiza scheduledAt
+  6. Notifica al estudiante
+  7. Retorna sesión actualizada
+end note
+
+note right of SessionsService::markDoneByStudent
+  1. Valida que user sea estudiante
+  2. Busca sesión en SessionsRepo
+  3. Valida que studentId == user.uid
+  4. Actualiza status a 'done'
+  5. Habilita pago para tutor
+  6. Retorna sesión actualizada
+end note
+
+@enduml
