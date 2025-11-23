@@ -231,6 +231,40 @@ Esta sección resume cómo se atienden los criterios de calidad y aseguramiento 
 - **Pruebas de carga**: scripts en k6 que someten a estrés los endpoints de autenticación y creación de sesiones.
 - **Pruebas de API**: colección Postman ejecutable con Newman que valida el correcto funcionamiento de los endpoints principales.
 
+**Evidencias de pruebas (capturas):**
+
+- **Tests unitarios backend**
+
+   ![Tests unitarios backend](./diagramasPNG/tests-backend-unit.png)
+
+- **Cobertura backend (Jest/Istanbul)**
+
+   ![Cobertura backend](./diagramasPNG/tests-backend-coverage.png)
+
+- **Tests de integración backend**
+
+   ![Tests integración backend](./diagramasPNG/tests-backend-integration.png)
+
+- **Tests unitarios frontend (Vitest)**
+
+   ![Tests unitarios frontend](./diagramasPNG/tests-frontend-unit.png)
+
+- **Tests E2E (Cypress)**
+
+   ![Tests E2E Cypress](./diagramasPNG/tests-frontend-e2e.png)
+
+- **Pruebas de carga k6 – sesiones**
+
+   ![Pruebas de carga k6 sesiones](./diagramasPNG/tests-k6-sessions.png)
+
+- **Pruebas de carga k6 – auth**
+
+   ![Pruebas de carga k6 auth](./diagramasPNG/tests-k6-auth.png)
+
+- **Pruebas de API con Postman/Newman**
+
+   ![Pruebas API Postman](./diagramasPNG/tests-postman.png)
+
 ### 6.2 CI/CD
 
 - **CI**: GitHub Actions ejecuta en cada push/PR
@@ -240,6 +274,16 @@ Esta sección resume cómo se atienden los criterios de calidad y aseguramiento 
   - Escaneos de seguridad (dependencias, secretos, contenedores).
 - **CD**: en merges a `main` se construye el frontend y se despliega automáticamente a Firebase Hosting y Functions.
 
+**Evidencias de CI/CD (capturas):**
+
+- **Workflow de GitHub Actions con todos los jobs en verde**
+
+   ![CI GitHub Actions](./diagramasPNG/ci-github-actions.png)
+
+- **Detalle de job de despliegue a Firebase**
+
+   ![CD Firebase Deploy](./diagramasPNG/ci-firebase-deploy.png)
+
 ### 6.3 DevSecOps y seguridad
 
 - **SAST**: SonarQube Cloud con cobertura >80% establecida como umbral.
@@ -248,6 +292,28 @@ Esta sección resume cómo se atienden los criterios de calidad y aseguramiento 
 - **Secrets**: Gitleaks para detectar posibles claves expuestas.
 - **Contenedores**: Trivy para analizar imágenes Docker de frontend y backend.
 - **Aplicación**: autenticación con Firebase Auth, autorización por roles mediante custom claims y middlewares, validación de datos con Zod y configuración correcta de CORS.
+
+**Evidencias de calidad y seguridad (capturas):**
+
+- **Panel de SonarQube (coverage, bugs, vulnerabilities)**
+
+   ![Panel SonarQube](./diagramasPNG/quality-sonarqube.png)
+
+- **Reporte OWASP ZAP (DAST)**
+
+   ![Reporte OWASP ZAP](./diagramasPNG/security-zap.png)
+
+- **Resultado de npm audit (dependency scanning)**
+
+   ![npm audit](./diagramasPNG/security-npm-audit.png)
+
+- **Resultado de Gitleaks (secrets scanning)**
+
+   ![Gitleaks](./diagramasPNG/security-gitleaks.png)
+
+- **Resultado de Trivy sobre imagen Docker**
+
+   ![Trivy](./diagramasPNG/security-trivy.png)
 
 ---
 
@@ -270,5 +336,3 @@ Monis‑Torías cumple con los requisitos planteados para el proyecto de Diseño
 - Integra una estrategia sólida de pruebas con alta cobertura y diferentes tipos de testing.
 - Implementa un pipeline de CI/CD automatizado y un conjunto de prácticas DevSecOps alineadas con las buenas prácticas de la industria.
 - Documenta las decisiones arquitectónicas y los retos técnicos afrontados durante el desarrollo.
-
-El sistema puede evolucionar en el futuro incorporando documentación automática de la API mediante Swagger/OpenAPI, métricas de observabilidad (Prometheus/Grafana) y estrategias de logging centralizado; sin embargo, el estado actual ya evidencia un diseño robusto y una entrega profesional acorde con los criterios de DYAS.
