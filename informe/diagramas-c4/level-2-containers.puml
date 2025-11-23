@@ -1,0 +1,48 @@
+@startuml C4_Container
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Diagrama de Contenedores - Sistema Monis-Torias (Nivel 2)
+
+Person(estudiante, "Estudiante", "Usuario que solicita tutorías")
+Person(tutor, "Tutor", "Usuario que ofrece tutorías")
+Person(manager, "Manager", "Administrador del sistema")
+
+System_Boundary(monisToriasSystem, "Sistema Monis-Torias") {
+    Container(webApp, "Web Application", "React 18 + TypeScript + Vite", "SPA que proporciona la interfaz de usuario para estudiantes, tutores y managers")
+    
+    Container(apiBackend, "API Backend", "Node.js + Express + Firebase Functions", "Proporciona endpoints REST para gestión de sesiones, pagos, tutores y usuarios")
+    
+    ContainerDb(firestore, "Base de Datos", "Cloud Firestore (NoSQL)", "Almacena usuarios, sesiones, pagos, tutores, códigos y earnings")
+    
+    Container(storage, "File Storage", "Firebase Storage", "Almacena materiales didácticos subidos por estudiantes y tutores")
+    
+    Container(auth, "Authentication Service", "Firebase Authentication", "Gestiona autenticación con email/password y tokens JWT con custom claims")
+}
+
+System_Ext(emailService, "Email Service", "Servicio de notificaciones por correo")
+System_Ext(githubActions, "GitHub Actions", "Pipeline CI/CD para testing y deployment")
+System_Ext(sonarCloud, "SonarCloud", "Análisis de calidad de código")
+
+' Relaciones usuarios → contenedores
+Rel(estudiante, webApp, "Navega, solicita tutorías", "HTTPS")
+Rel(tutor, webApp, "Confirma sesiones, genera códigos", "HTTPS")
+Rel(manager, webApp, "Gestiona tutores, aprueba pagos", "HTTPS")
+
+' Relaciones entre contenedores
+Rel(webApp, apiBackend, "Hace llamadas API", "HTTPS/JSON")
+Rel(webApp, auth, "Login, signup, get token", "Firebase SDK")
+Rel(webApp, storage, "Sube/descarga materiales", "Firebase SDK")
+
+Rel(apiBackend, firestore, "Lee/escribe datos", "Firebase Admin SDK")
+Rel(apiBackend, auth, "Valida tokens JWT", "Firebase Admin SDK")
+Rel(apiBackend, storage, "Genera URLs firmadas", "Firebase Admin SDK")
+Rel(apiBackend, emailService, "Envía notificaciones", "HTTPS")
+
+' Relaciones CI/CD
+Rel(githubActions, webApp, "Deploy frontend", "Firebase CLI")
+Rel(githubActions, apiBackend, "Deploy functions", "Firebase CLI")
+Rel(githubActions, sonarCloud, "Análisis de código", "SonarScanner")
+
+@enduml

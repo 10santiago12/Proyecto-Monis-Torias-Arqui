@@ -1,0 +1,218 @@
+@startuml vista-fisica
+' Vista Física - Modelo 4+1
+' Muestra el despliegue físico del sistema en nodos de hardware/infraestructura
+
+!define NODE node
+!define ARTIFACT artifact
+!define DATABASE database
+
+title Despliegue Físico - Infraestructura en Firebase y Kubernetes
+
+cloud "Internet" {
+  actor "Estudiantes" as students
+  actor "Tutores" as tutors
+  actor "Managers" as managers
+}
+
+cloud "Firebase Cloud Platform" {
+  NODE "Firebase Hosting\n(CDN Global)" as hosting {
+    ARTIFACT "React SPA\n(dist/ bundle)" as webapp
+    note right: Archivos estáticos\nHTML, CSS, JS
+  }
+  
+  NODE "Cloud Functions\nus-central1" as functions {
+    ARTIFACT "API Backend\n(Node.js 20)" as api
+    note right: Serverless\nAutoescalado
+  }
+  
+  DATABASE "Cloud Firestore\n(NoSQL)" as firestore {
+    folder "Collections" {
+      [sessions]
+      [tutors]
+      [tutors_codes]
+      [payments]
+      [earnings]
+      [user_roles]
+    }
+  }
+  
+  DATABASE "Firebase Auth" as auth {
+    folder "Users" {
+      [User Records]
+      [Custom Claims]
+    }
+  }
+  
+  DATABASE "Cloud Storage" as storage {
+    folder "Buckets" {
+      [materials/]
+      [uploads/]
+    }
+  }
+  
+  NODE "Cloud Messaging\n(FCM)" as fcm
+}
+
+cloud "Kubernetes Cluster (Alternativo)" as k8s {
+  NODE "Worker Node 1" {
+    NODE "Pod: monis-frontend-1" {
+      ARTIFACT "Nginx Container" as nginx1
+      ARTIFACT "React App" as react1
+    }
+    
+    NODE "Pod: monis-backend-1" {
+      ARTIFACT "Node.js Container" as node1
+      ARTIFACT "Express API" as express1
+    }
+  }
+  
+  NODE "Worker Node 2" {
+    NODE "Pod: monis-frontend-2" {
+      ARTIFACT "Nginx Container" as nginx2
+      ARTIFACT "React App" as react2
+    }
+    
+    NODE "Pod: monis-backend-2" {
+      ARTIFACT "Node.js Container" as node2
+      ARTIFACT "Express API" as express2
+    }
+  }
+  
+  NODE "Ingress Controller\n(NGINX)" as ingress {
+    note right: Load Balancer\nSSL/TLS Termination
+  }
+  
+  NODE "ConfigMaps & Secrets" {
+    [backend-config]
+    [frontend-config]
+    [firebase-credentials]
+  }
+}
+
+cloud "CI/CD - GitHub Actions" as cicd {
+  NODE "GitHub Runner\n(Ubuntu Latest)" as runner {
+    ARTIFACT "Build Jobs" as jobs
+    ARTIFACT "Test Suites" as tests
+    ARTIFACT "Security Scans" as security
+  }
+  
+  NODE "SonarCloud" as sonar
+  NODE "Docker Hub Registry" as dockerhub
+}
+
+cloud "Development Environment" as dev {
+  NODE "Developer Laptop\n(Windows/Mac/Linux)" as laptop {
+    ARTIFACT "VS Code IDE" as vscode
+    ARTIFACT "Node.js 20" as nodejs
+    ARTIFACT "Firebase Emulators" as emulators
+    ARTIFACT "Docker Desktop" as docker
+  }
+}
+
+cloud "Monitoring & Security" as monitoring {
+  NODE "Firebase Console" as console {
+    [Realtime Logs]
+    [Performance]
+    [Crashlytics]
+  }
+  
+  NODE "SonarQube Cloud" as sonarqube {
+    [Code Quality]
+    [Security Hotspots]
+    [Coverage Reports]
+  }
+  
+  NODE "GitHub Security" as ghsecurity {
+    [Dependabot Alerts]
+    [Code Scanning]
+    [Secret Scanning]
+  }
+}
+
+' User Connections
+students --> hosting: HTTPS requests
+tutors --> hosting: HTTPS requests
+managers --> hosting: HTTPS requests
+
+' Firebase Architecture
+hosting --> webapp: serves
+webapp --> api: REST API calls\n(HTTPS)
+api --> firestore: read/write data
+api --> auth: verify tokens
+api --> storage: upload/download files
+api --> fcm: send notifications
+
+' Kubernetes Architecture (Alternative)
+students --> ingress: HTTPS requests
+ingress --> nginx1: routes /
+ingress --> nginx1: routes /
+ingress --> node1: routes /api
+ingress --> node2: routes /api
+
+nginx1 --> react1: serves
+nginx2 --> react2: serves
+node1 --> express1: runs
+node2 --> express2: runs
+
+express1 --> firestore: connects to
+express2 --> firestore: connects to
+[backend-config] ..> node1: env vars
+[firebase-credentials] ..> node1: secrets
+
+' CI/CD Connections
+laptop --> vscode: develops
+vscode --> runner: git push
+runner --> jobs: executes
+jobs --> tests: runs
+jobs --> security: scans
+jobs --> sonar: analyzes code
+jobs --> dockerhub: pushes images
+dockerhub --> k8s: pulls images
+jobs --> hosting: deploys frontend
+jobs --> functions: deploys backend
+
+' Monitoring
+functions ..> console: logs & metrics
+hosting ..> console: analytics
+runner ..> sonarqube: quality metrics
+runner ..> ghsecurity: security alerts
+
+note as N1
+  **Despliegue Firebase (Producción):**
+  - Region: us-central1
+  - CDN: Global (Firebase Hosting)
+  - Auto-scaling: Automático
+  - Backup: Automático (Firestore)
+  - SSL: Automático (Let's Encrypt)
+end note
+
+note as N2
+  **Despliegue Kubernetes (Alternativo):**
+  - Namespace: monis-torias
+  - Replicas Frontend: 2
+  - Replicas Backend: 2
+  - Resources: 256Mi-512Mi RAM, 250m-500m CPU
+  - Health Checks: Liveness & Readiness probes
+  - Ingress: NGINX con SSL/TLS
+end note
+
+note as N3
+  **Escalabilidad:**
+  - Firebase Functions: Hasta 1000 instancias concurrentes
+  - Kubernetes HPA: Auto-escala basado en CPU (70%)
+  - Firestore: 1M escrituras/día (cuota gratuita)
+  - Storage: 5GB (cuota gratuita)
+  - CDN: Distribución global con baja latencia
+end note
+
+note as N4
+  **Seguridad:**
+  - HTTPS obligatorio en todos los endpoints
+  - JWT tokens con validación en cada request
+  - CORS configurado para origenes específicos
+  - Secrets encriptados (K8s Secrets, Firebase Config)
+  - Security Headers: CSP, X-Frame-Options, HSTS
+  - Scans automáticos: SonarCloud, Trivy, Gitleaks
+end note
+
+@enduml
