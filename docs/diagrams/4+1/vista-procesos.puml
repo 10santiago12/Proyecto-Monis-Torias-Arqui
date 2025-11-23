@@ -1,144 +1,40 @@
 @startuml vista-procesos
-' Vista de Procesos - Modelo 4+1
-' Muestra los procesos concurrentes y la comunicación entre ellos
-
-!define ACTOR participant
-!define COMPONENT participant
-
-title Flujo de Procesos: Solicitud y Confirmación de Sesión de Tutoría
+title Vista de Procesos - Flujo de Sesión
 
 actor Estudiante as student
 actor Tutor as tutor
-actor Manager as manager
 
-COMPONENT "Frontend\n(React SPA)" as frontend
-COMPONENT "API Backend\n(Firebase Functions)" as api
-COMPONENT "Auth Middleware" as auth
-COMPONENT "Sessions Service" as sessionsvc
-COMPONENT "Sessions Repo" as sessionrepo
-COMPONENT "Notifications Service" as notifications
+participant "Frontend" as frontend
+participant "API" as api
+participant "Auth MW" as auth
+participant "Service" as service
 database "Firestore" as db
-database "Firebase Auth" as fbauth
+participant "FCM" as fcm
 
-== Fase 1: Solicitud de Sesión por Estudiante ==
+== Solicitud de Sesión ==
 
-student -> frontend: Ingresa código del tutor\ny solicita sesión
-frontend -> fbauth: getIdToken()
-fbauth --> frontend: JWT token
-frontend -> api: POST /sessions/request\n{code, subject, date}\nAuthorization: Bearer <token>
+student -> frontend: Solicita sesión
+frontend -> api: POST /sessions + JWT
+api -> auth: verifyToken()
+api -> service: requestSession()
+service -> db: Crear sesión
+service -> fcm: Notificar tutor
+fcm ->> tutor: Nueva solicitud
+service --> api: sessionId
+api --> frontend: 201 Created
+frontend --> student: Sesión solicitada
 
-api -> auth: verifyToken(token)
-auth -> fbauth: verifyIdToken(token)
-fbauth --> auth: DecodedToken + roles
-auth --> api: req.user = {uid, roles}
+== Confirmación ==
 
-api -> sessionsvc: requestSession(data, studentId)
-
-par Concurrent Operations
-  sessionsvc -> sessionrepo: getByCode(code)
-  sessionrepo -> db: query tutors_codes\nwhere code = '1234'
-  db --> sessionrepo: tutorInfo
-  sessionrepo --> sessionsvc: tutorInfo
-
-  sessionsvc -> sessionrepo: create({...sessionData})
-  sessionrepo -> db: add to sessions collection
-  db --> sessionrepo: sessionId
-  sessionrepo --> sessionsvc: sessionId
-end
-
-sessionsvc -> notifications: notifyTutorSessionRequested(tutorId)
-note right
-  Notificación asíncrona (fire-and-forget)
-  No bloquea la respuesta al estudiante
-end note
-
-notifications -> db: Get tutor FCM token
-db --> notifications: fcm_token
-notifications -> "FCM\n(Firebase Cloud Messaging)": Send push notification
-"FCM\n(Firebase Cloud Messaging)" --> tutor: 📱 Nueva solicitud de sesión
-
-sessionsvc --> api: {id, status: "requested", ...}
-api --> frontend: 201 Created\n{session}
-frontend --> student: ✅ Sesión solicitada exitosamente
-
-== Fase 2: Confirmación por Tutor ==
-
-tutor -> frontend: Revisa solicitudes\ny confirma sesión
-frontend -> fbauth: getIdToken()
-fbauth --> frontend: JWT token
-frontend -> api: POST /sessions/:id/confirm\n{scheduledAt}\nAuthorization: Bearer <token>
-
-api -> auth: verifyToken(token)
-auth -> fbauth: verifyIdToken(token)
-fbauth --> auth: DecodedToken + roles
-auth --> api: req.user = {uid, roles: ['tutor']}
-
-api -> sessionsvc: confirmByTutor(sessionId, scheduledAt, tutorId)
-
-sessionsvc -> sessionrepo: getById(sessionId)
-sessionrepo -> db: get session document
-db --> sessionrepo: session data
-sessionrepo --> sessionsvc: session
-
-alt Session validation
-  sessionsvc -> sessionsvc: Validate session belongs to tutor
-  sessionsvc -> sessionsvc: Validate status is "requested"
-else Validation fails
-  sessionsvc --> api: Error: Invalid session or status
-  api --> frontend: 400 Bad Request
-  frontend --> tutor: ❌ No se puede confirmar
-  [end]
-end
-
-sessionsvc -> sessionrepo: update(sessionId, {status: "confirmed", scheduledAt})
-sessionrepo -> db: update sessions/{sessionId}
-db --> sessionrepo: updated session
-sessionrepo --> sessionsvc: updatedSession
-
-sessionsvc -> notifications: notifyStudentSessionConfirmed(studentId)
-notifications -> db: Get student FCM token
-db --> notifications: fcm_token
-notifications -> "FCM\n(Firebase Cloud Messaging)": Send push notification
-"FCM\n(Firebase Cloud Messaging)" --> student: 📱 Sesión confirmada
-
-sessionsvc --> api: {id, status: "confirmed", scheduledAt, ...}
-api --> frontend: 200 OK\n{session}
-frontend --> tutor: ✅ Sesión confirmada
-
-== Fase 3: Finalización de Sesión ==
-
-student -> frontend: Marca sesión como completada
-frontend -> api: POST /sessions/:id/mark-done\nAuthorization: Bearer <token>
-
-api -> auth: verifyToken(token)
-auth --> api: req.user
-
-api -> sessionsvc: markDoneByStudent(sessionId, studentId)
-sessionsvc -> sessionrepo: getById(sessionId)
-sessionrepo -> db: get session document
-db --> sessionrepo: session
-sessionrepo --> sessionsvc: session
-
-sessionsvc -> sessionsvc: Validate session belongs to student
-sessionsvc -> sessionsvc: Validate status is "confirmed"
-
-sessionsvc -> sessionrepo: update(sessionId, {status: "done", completedAt})
-sessionrepo -> db: update sessions/{sessionId}
-db --> sessionrepo: updated session
-sessionrepo --> sessionsvc: updatedSession
-
-sessionsvc --> api: {id, status: "done", ...}
-api --> frontend: 200 OK\n{session}
-frontend --> student: ✅ Sesión completada
-
-note over sessionsvc, sessionrepo
-  **Concurrencia y Consistencia:**
-  - Todas las operaciones de escritura en Firestore
-    son atómicas
-  - Las notificaciones son asíncronas y no bloquean
-  - Los tokens JWT se verifican en cada request
-  - El estado de sesión sigue un flujo estricto:
-    requested → confirmed → done
-end note
+tutor -> frontend: Confirma sesión
+frontend -> api: POST /sessions/:id/confirm + JWT
+api -> auth: verifyToken()
+api -> service: confirmSession()
+service -> db: Actualizar estado
+service -> fcm: Notificar estudiante
+fcm ->> student: Sesión confirmada
+service --> api: success
+api --> frontend: 200 OK
+frontend --> tutor: Confirmado
 
 @enduml
