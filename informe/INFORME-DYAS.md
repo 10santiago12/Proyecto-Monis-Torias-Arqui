@@ -235,27 +235,29 @@ Esta sección resume cómo se atienden los criterios de calidad y aseguramiento 
 
 - **Tests unitarios backend**
 
-   ![Tests unitarios backend](./diagramasPNG/tests-backend-unit.png)
+   ![Tests unitarios backend](./pruebas/pruebas%20unitarias%20backend%201.jpg)
+   ![Tests unitarios backend](./pruebas/pruebas%20unitarias%20backend%202.jpg)
+   ![Tests unitarios backend](./pruebas/pruebas%20unitarias%20backend%203.jpg)
+   ![Tests unitarios backend](./pruebas/pruebas%20unitarias%20backend%204.jpg)
 
 - **Cobertura backend (Jest/Istanbul)**
 
-   ![Cobertura backend](./diagramasPNG/tests-backend-coverage.png)
-
-- **Tests de integración backend**
-
-   ![Tests integración backend](./diagramasPNG/tests-backend-integration.png)
+   ![Cobertura backend](./pruebas/Pruebas%20cobertura%20backend%201.png)
+   ![Cobertura backend](./pruebas/Pruebas%20cobertura%20backend%202.png)
+   ![Cobertura backend](./pruebas/Pruebas%20cobertura%20backend%203.png)
 
 - **Tests unitarios frontend (Vitest)**
 
-   ![Tests unitarios frontend](./diagramasPNG/tests-frontend-unit.png)
+   ![Tests unitarios frontend](./pruebas/Pruebas%20unitarias%20frontend.png)
 
 - **Tests E2E (Cypress)**
 
-   ![Tests E2E Cypress](./diagramasPNG/tests-frontend-e2e.png)
+   ![Tests E2E Cypress](./pruebas/Prueba%20cypress.png)
 
 - **Pruebas de API con Postman/Newman**
 
-   ![Pruebas API Postman](./diagramasPNG/tests-postman.png)
+   ![Pruebas API Postman](./pruebas/Prueba%20postman%201.png)
+   ![Pruebas API Postman](./pruebas/Prueba%20postman%202.png)
 
 ### 6.2 CI/CD
 
@@ -270,11 +272,10 @@ Esta sección resume cómo se atienden los criterios de calidad y aseguramiento 
 
 - **Workflow de GitHub Actions con todos los jobs en verde**
 
-   ![CI GitHub Actions](./diagramasPNG/ci-github-actions.png)
-
+   ![CI GitHub Actions](./pruebas/Github%20Actions.png)
 - **Detalle de job de despliegue a Firebase**
 
-   ![CD Firebase Deploy](./diagramasPNG/ci-firebase-deploy.png)
+   ![CD Firebase Deploy](./pruebas/Firebase%20Deploy.png)
 
 ### 6.3 DevSecOps y seguridad
 
@@ -289,7 +290,7 @@ Esta sección resume cómo se atienden los criterios de calidad y aseguramiento 
 
 - **Panel de SonarQube (coverage, bugs, vulnerabilities)**
 
-   ![Panel SonarQube](./diagramasPNG/quality-sonarqube.png)
+   ![Panel SonarQube](./pruebas/Prueba%20SonarQube.png)
 
 - **Reporte OWASP ZAP (DAST)**
 
@@ -297,11 +298,11 @@ Esta sección resume cómo se atienden los criterios de calidad y aseguramiento 
 
 - **Resultado de npm audit (dependency scanning)**
 
-   ![npm audit](./diagramasPNG/security-npm-audit.png)
+   ![npm audit](./pruebas/npm-audit.png)
 
 - **Resultado de Gitleaks (secrets scanning)**
 
-   ![Gitleaks](./diagramasPNG/security-gitleaks.png)
+   ![Gitleaks](./pruebas/gitleaks.png)
 
 - **Resultado de Trivy sobre imagen Docker**
 
