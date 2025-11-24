@@ -1,3 +1,17 @@
+---
+geometry: margin=2cm
+graphics: yes
+header-includes: |
+  \usepackage{float}
+  \let\origfigure\figure
+  \let\endorigfigure\endfigure
+  \renewenvironment{figure}[1][2] {
+    \expandafter\origfigure\expandafter[H]
+  } {
+    \endorigfigure
+  }
+---
+
 # Proyecto Monis-Torías – Informe Final DYAS
 
 **Proyecto**: Sistema de Gestión de Tutorías Académicas (Monis‑Torías)
@@ -24,7 +38,7 @@ El proyecto adopta una arquitectura limpia con separación clara entre frontend 
 Desde la perspectiva de diseño y arquitectura de software, el sistema incluye:
 
 - Un modelo arquitectónico documentado con **4+1 vistas** y **modelo C4**, con sus diagramas correspondientes.
-- Cobertura de pruebas elevada en backend (≈98.7%) y un análisis de calidad en SonarQube superior al umbral exigido por DYAS (>80%).
+- Cobertura de pruebas elevada en backend (98.7%) y un análisis de calidad en SonarQube superior al umbral exigido por DYAS (>80%).
 - Integración de prácticas DevSecOps: SAST (SonarQube), DAST (OWASP ZAP), análisis de dependencias, escaneo de contenedores y búsqueda de secretos.
 - Contenerización de componentes clave con Docker, orquestación de referencia en Kubernetes y despliegue productivo en Firebase.
 
@@ -69,7 +83,7 @@ La vista lógica describe los principales componentes de software y sus relacion
 
 **Diagrama de vista lógica:**
 
-![Vista lógica 4+1](./diagramasPNG/logica.jpg)
+![Vista lógica 4+1](./diagramasPNG/logica.jpg){ width=70% }
 
 A alto nivel, en el **backend** se tienen:
 
@@ -93,7 +107,7 @@ La vista de procesos representa los flujos dinámicos más importantes, incluyen
 
 **Diagrama de procesos – flujo de solicitud de sesión:**
 
-![Vista de procesos 4+1](./diagramasPNG/procesos.jpg)
+![Vista de procesos 4+1](./diagramasPNG/procesos.jpg){ width=70% }
 
 Flujo típico:
 
@@ -112,7 +126,7 @@ La vista de desarrollo (o implementación) muestra la organización del software
 
 **Diagrama de vista de desarrollo:**
 
-![Vista de desarrollo 4+1](./diagramasPNG/desarrollo.jpg)
+![Vista de desarrollo 4+1](./diagramasPNG/desarrollo.jpg){ width=50% }
 
 En el repositorio monorepo se distinguen dos carpetas principales:
 
@@ -127,7 +141,7 @@ La vista física describe el despliegue de componentes de software en la infraes
 
 **Diagrama de vista física:**
 
-![Vista física 4+1](./diagramasPNG/fisica.jpg)
+![Vista física 4+1](./diagramasPNG/fisica.jpg){ width=50% }
 
 Existen dos escenarios principales:
 
@@ -148,7 +162,7 @@ La vista de escenarios recoge casos de uso representativos, combinando elementos
 
 **Diagrama de escenarios:**
 
-![Vista de escenarios 4+1](./diagramasPNG/escenarios.jpg)
+![Vista de escenarios 4+1](./diagramasPNG/escenarios.jpg){ width=50% }
 
 Algunos de los escenarios más importantes son:
 
@@ -167,7 +181,7 @@ El modelo C4 complementa al modelo 4+1 describiendo el sistema a distintos nivel
 
 **Diagrama de contexto:**
 
-![Contexto C4](./diagramasPNG/contexto.jpg)
+![Contexto C4](./diagramasPNG/contexto.jpg){ width=50% }
 
 En este nivel se muestra Monis‑Torías como un sistema que interactúa con:
 
@@ -179,7 +193,7 @@ En este nivel se muestra Monis‑Torías como un sistema que interactúa con:
 
 **Diagrama de contenedores:**
 
-![Contenedores C4](./diagramasPNG/contenedores.jpg)
+![Contenedores C4](./diagramasPNG/contenedores.jpg){ width=50% }
 
 Se identifican los principales contenedores lógicos:
 
@@ -193,7 +207,7 @@ Se identifican los principales contenedores lógicos:
 
 **Diagrama de componentes:**
 
-![Componentes C4](./diagramasPNG/componentes.jpg)
+![Componentes C4](./diagramasPNG/componentes.jpg){ width=50% }
 
 En el backend, el contenedor de API se divide conceptualmente en:
 
@@ -208,7 +222,7 @@ En el frontend, la aplicación se compone de páginas (como `LoginPage`, `Sessio
 
 **Diagrama de código (módulo de sesiones):**
 
-![Código C4 – Sessions](./diagramasPNG/codigo.jpg)
+![Código C4 – Sessions](./diagramasPNG/codigo.jpg){ width=50% }
 
 Este nivel muestra cómo se estructura internamente el módulo de sesiones, con clases y/o funciones como:
 
@@ -220,7 +234,7 @@ Este nivel muestra cómo se estructura internamente el módulo de sesiones, con 
 
 ## 6. Calidad, pruebas y DevSecOps
 
-Esta sección resume cómo se atienden los criterios de calidad y aseguramiento exigidos por DYAS (detalles completos en `ESTADO_PROYECTO.md`).
+Esta sección resume cómo se atienden los criterios de calidad y aseguramiento exigidos por DYAS.
 
 ### 6.1 Estrategia de pruebas
 
@@ -228,21 +242,31 @@ Esta sección resume cómo se atienden los criterios de calidad y aseguramiento 
 - **Frontend**: pruebas unitarias con Vitest sobre componentes clave y lógica de autenticación, así como pruebas E2E con Cypress que cubren los flujos de login, creación y confirmación de sesiones.
 - **Pruebas de carga**: scripts en k6 que someten a estrés los endpoints de autenticación y creación de sesiones.
 - **Pruebas de API**: colección Postman ejecutable con Newman que valida el correcto funcionamiento de los endpoints principales.
+- **Reportes de pruebas**: Allure Framework para visualización consolidada de resultados de tests con métricas, gráficos y trazabilidad por suite.
 
 **Evidencias de pruebas (capturas):**
 
+- **Reporte consolidado Allure**
+
+   ![Reporte Allure](./pruebas/allure.jpg)
+
 - **Tests unitarios backend**
 
-   ![Tests unitarios backend](./pruebas/pruebas%20unitarias%20backend%201.jpg)
-   ![Tests unitarios backend](./pruebas/pruebas%20unitarias%20backend%202.jpg)
-   ![Tests unitarios backend](./pruebas/pruebas%20unitarias%20backend%203.jpg)
-   ![Tests unitarios backend](./pruebas/pruebas%20unitarias%20backend%204.jpg)
+   ![Tests unitarios backend](./pruebas/pruebas%20unitarias%20backend%201.jpg){ width=65% }
+
+   ![Tests unitarios backend](./pruebas/pruebas%20unitarias%20backend%202.jpg){ width=65% }
+
+   ![Tests unitarios backend](./pruebas/pruebas%20unitarias%20backend%203.jpg){ width=65% }
+
+   ![Tests unitarios backend](./pruebas/pruebas%20unitarias%20backend%204.jpg){ width=65% }
 
 - **Cobertura backend (Jest/Istanbul)**
 
-   ![Cobertura backend](./pruebas/Pruebas%20cobertura%20backend%201.png)
-   ![Cobertura backend](./pruebas/Pruebas%20cobertura%20backend%202.png)
-   ![Cobertura backend](./pruebas/Pruebas%20cobertura%20backend%203.png)
+   ![Cobertura backend](./pruebas/Pruebas%20cobertura%20backend%201.png){ width=65% }
+
+   ![Cobertura backend](./pruebas/Pruebas%20cobertura%20backend%202.png){ width=65% }
+
+   ![Cobertura backend](./pruebas/Pruebas%20cobertura%20backend%203.png){ width=65% }
 
 - **Tests unitarios frontend (Vitest)**
 
@@ -254,8 +278,9 @@ Esta sección resume cómo se atienden los criterios de calidad y aseguramiento 
 
 - **Pruebas de API con Postman/Newman**
 
-   ![Pruebas API Postman](./pruebas/Prueba%20postman%201.png)
-   ![Pruebas API Postman](./pruebas/Prueba%20postman%202.png)
+   ![Pruebas API Postman](./pruebas/Prueba%20postman%201.png){ width=65% }
+
+   ![Pruebas API Postman](./pruebas/Prueba%20postman%202.png){ width=65% }
 
 ### 6.2 CI/CD
 
@@ -292,8 +317,9 @@ Esta sección resume cómo se atienden los criterios de calidad y aseguramiento 
 
 - **Reporte OWASP ZAP (DAST)**
 
-   ![Reporte OWASP ZAP](./pruebas/ZAP%201.png)
-   ![Reporte OWASP ZAP](./pruebas/ZAP%202.png)
+   ![Reporte OWASP ZAP](./pruebas/ZAP%201.png){ width=65% }
+
+   ![Reporte OWASP ZAP](./pruebas/ZAP%202.png){ width=65% }
 
 - **Resultado de npm audit (dependency scanning)**
 
@@ -311,12 +337,14 @@ Esta sección resume cómo se atienden los criterios de calidad y aseguramiento 
 
 ## 7. Retos técnicos y soluciones
 
-A lo largo del proyecto se identificaron y resolvieron varios retos, documentados con más detalle en `RETOS_Y_SOLUCIONES.md`. Algunos destacados son:
+A lo largo del proyecto se identificaron y resolvieron varios retos tanto de frontend, backend, despliegue y pruebas. Algunos destacados son:
 
 - **Cobertura en SonarQube**: inicialmente, la mezcla de frontend y backend arrojaba un porcentaje bajo. Se ajustó el análisis para enfocarlo en el backend (donde la cobertura real supera el 98%), logrando un 91.4% en SonarQube.
 - **Compatibilidad de Allure**: se sustituyeron librerías no compatibles (`jest-allure`) por `allure-jest` para generar reportes de pruebas más confiables.
 - **Problemas en builds Docker**: ajustes en `.dockerignore` y en la estructura de los Dockerfiles para garantizar que los artefactos necesarios se copien correctamente.
 - **Configuración de CORS y JWT**: ajuste fino de políticas CORS y validación de tokens para prevenir errores de autenticación al consumir el API desde el frontend.
+- **Mocking de Firebase Admin SDK**: la complejidad de simular Firestore en tests de integración llevó a enfocarse en pruebas unitarias con mocks más controlados, logrando mayor estabilidad.
+- **Permisos y herramientas DevSecOps**: restricciones del sistema operativo obligaron a usar instalaciones manuales de herramientas como Gitleaks y Trivy en lugar de gestores de paquetes.
 
 ---
 
@@ -324,7 +352,10 @@ A lo largo del proyecto se identificaron y resolvieron varios retos, documentado
 
 Monis‑Torías cumple con los requisitos planteados para el proyecto de Diseño y Arquitectura de Software:
 
-- Presenta una arquitectura clara y modular, descrita mediante los modelos 4+1 y C4.
-- Integra una estrategia sólida de pruebas con alta cobertura y diferentes tipos de testing.
-- Implementa un pipeline de CI/CD automatizado y un conjunto de prácticas DevSecOps alineadas con las buenas prácticas de la industria.
-- Documenta las decisiones arquitectónicas y los retos técnicos afrontados durante el desarrollo.
+- **Arquitectura sólida**: modelos 4+1 y C4 documentan claramente la estructura, componentes y despliegue del sistema, facilitando su comprensión y evolución.
+- **Calidad verificable**: cobertura de pruebas >90%, análisis estático con SonarQube y reportes consolidados con Allure demuestran un enfoque riguroso en la calidad del código.
+- **Seguridad integrada**: prácticas DevSecOps (SAST, DAST, análisis de dependencias, escaneo de contenedores y secretos) aseguran que la aplicación siga estándares de seguridad desde el desarrollo.
+- **Automatización efectiva**: pipeline CI/CD en GitHub Actions garantiza entregas rápidas y confiables, con despliegue automático a Firebase en cada merge a producción.
+- **Aprendizaje aplicado**: el proyecto integra conceptos teóricos del curso (patrones arquitectónicos, principios SOLID, testing strategies) en una solución real y funcional.
+
+El resultado es una plataforma robusta, mantenible y escalable que demuestra las competencias adquiridas en diseño y arquitectura de software.
