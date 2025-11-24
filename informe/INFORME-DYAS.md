@@ -253,14 +253,6 @@ Esta sección resume cómo se atienden los criterios de calidad y aseguramiento 
 
    ![Tests E2E Cypress](./diagramasPNG/tests-frontend-e2e.png)
 
-- **Pruebas de carga k6 – sesiones**
-
-   ![Pruebas de carga k6 sesiones](./diagramasPNG/tests-k6-sessions.png)
-
-- **Pruebas de carga k6 – auth**
-
-   ![Pruebas de carga k6 auth](./diagramasPNG/tests-k6-auth.png)
-
 - **Pruebas de API con Postman/Newman**
 
    ![Pruebas API Postman](./diagramasPNG/tests-postman.png)

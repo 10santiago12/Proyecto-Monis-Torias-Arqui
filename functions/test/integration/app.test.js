@@ -123,7 +123,7 @@ describe('API Integration Tests', () => {
             doc: jest.fn(() => ({
               get: jest.fn().mockResolvedValue({
                 exists: true,
-                data: () => ({ claimedBy: 'tutor123', active: false }),
+                data: () => ({ claimedBy: 'tutor123', active: true, code: '1234' }),
               }),
             })),
           };
@@ -155,6 +155,9 @@ describe('API Integration Tests', () => {
           price: 50,
         });
 
+      if (response.status !== 201) {
+        console.log('Error response:', response.body);
+      }
       expect(response.status).toBe(201);
       expect(response.body).toHaveProperty('id');
     });
@@ -190,6 +193,7 @@ describe('API Integration Tests', () => {
           return {
             where: jest.fn(() => ({
               get: jest.fn().mockResolvedValue({
+                empty: false,
                 docs: [
                   {
                     id: 's1',
@@ -353,12 +357,13 @@ describe('API Integration Tests', () => {
         if (col === 'tutors') {
           return {
             get: jest.fn().mockResolvedValue({
-              forEach: (callback) => {
-                callback({
+              empty: false,
+              docs: [
+                {
                   id: 'tutor1',
                   data: () => ({ email: 'tutor1@test.com' }),
-                });
-              },
+                },
+              ],
             }),
           };
         }

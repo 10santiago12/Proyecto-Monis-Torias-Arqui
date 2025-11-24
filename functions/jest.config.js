@@ -20,9 +20,5 @@ module.exports = {
   },
   setupFilesAfterEnv: ['<rootDir>/test/setup.js'],
   testTimeout: 10000,
-  verbose: true,
-  testEnvironment: 'allure-jest/node',
-  testEnvironmentOptions: {
-    resultsDir: '../allure/allure-results/backend'
-  }
+  verbose: true
 };
