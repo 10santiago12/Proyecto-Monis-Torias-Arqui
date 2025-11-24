@@ -28,8 +28,6 @@ Desde la perspectiva de diseño y arquitectura de software, el sistema incluye:
 - Integración de prácticas DevSecOps: SAST (SonarQube), DAST (OWASP ZAP), análisis de dependencias, escaneo de contenedores y búsqueda de secretos.
 - Contenerización de componentes clave con Docker, orquestación de referencia en Kubernetes y despliegue productivo en Firebase.
 
-Este informe resume la solución desde el punto de vista arquitectónico, de calidad y de proceso, alineado con los requisitos definidos en la rúbrica DYAS y usando como base la documentación más detallada que se encuentra en `README-PRINCIPAL.md`, `ESTADO_PROYECTO.md` y `RETOS_Y_SOLUCIONES.md`.
-
 ---
 
 ## 3. Contexto y alcance del sistema
@@ -51,7 +49,7 @@ Monis‑Torías aborda estos problemas proporcionando una aplicación web centra
 - Permitir a los tutores **gestionar su agenda** de tutorías, aceptar o rechazar solicitudes y registrar la realización de la sesión.
 - Proveer a los coordinadores una vista de **gestión y monitoreo**, con métricas básicas (número de sesiones, tutores activos, etc.).
 - Integrar mecanismos de autenticación, autorización por roles y trazabilidad de operaciones.
-- Demostrar un diseño arquitectónico sólido acorde a los criterios de DYAS.
+- Demostrar un diseño arquitectónico sólido.
 
 ### 3.3 Actores principales
 
@@ -71,7 +69,7 @@ La vista lógica describe los principales componentes de software y sus relacion
 
 **Diagrama de vista lógica:**
 
-![Vista lógica 4+1](./diagramasPNG/Imagen%20de%20WhatsApp%202025-11-23%20a%20las%2014.01.12_ce85a787.jpg)
+![Vista lógica 4+1](./diagramasPNG/logica.jpg)
 
 A alto nivel, en el **backend** se tienen:
 
@@ -95,7 +93,7 @@ La vista de procesos representa los flujos dinámicos más importantes, incluyen
 
 **Diagrama de procesos – flujo de solicitud de sesión:**
 
-![Vista de procesos 4+1](./diagramasPNG/Imagen%20de%20WhatsApp%202025-11-23%20a%20las%2014.01.12_fb42747b.jpg)
+![Vista de procesos 4+1](./diagramasPNG/procesos.jpg)
 
 Flujo típico:
 
@@ -114,7 +112,7 @@ La vista de desarrollo (o implementación) muestra la organización del software
 
 **Diagrama de vista de desarrollo:**
 
-![Vista de desarrollo 4+1](./diagramasPNG/Imagen%20de%20WhatsApp%202025-11-23%20a%20las%2014.01.13_0478d36a.jpg)
+![Vista de desarrollo 4+1](./diagramasPNG/desarrollo.jpg)
 
 En el repositorio monorepo se distinguen dos carpetas principales:
 
@@ -129,7 +127,7 @@ La vista física describe el despliegue de componentes de software en la infraes
 
 **Diagrama de vista física:**
 
-![Vista física 4+1](./diagramasPNG/Imagen%20de%20WhatsApp%202025-11-23%20a%20las%2014.01.13_10f00599.jpg)
+![Vista física 4+1](./diagramasPNG/fisica.jpg)
 
 Existen dos escenarios principales:
 
@@ -150,7 +148,7 @@ La vista de escenarios recoge casos de uso representativos, combinando elementos
 
 **Diagrama de escenarios:**
 
-![Vista de escenarios 4+1](./diagramasPNG/Imagen%20de%20WhatsApp%202025-11-23%20a%20las%2014.01.13_2337c048.jpg)
+![Vista de escenarios 4+1](./diagramasPNG/escenarios.jpg)
 
 Algunos de los escenarios más importantes son:
 
@@ -169,7 +167,7 @@ El modelo C4 complementa al modelo 4+1 describiendo el sistema a distintos nivel
 
 **Diagrama de contexto:**
 
-![Contexto C4](./diagramasPNG/Imagen%20de%20WhatsApp%202025-11-23%20a%20las%2014.04.00_049de98c.jpg)
+![Contexto C4](./diagramasPNG/contexto.jpg)
 
 En este nivel se muestra Monis‑Torías como un sistema que interactúa con:
 
@@ -181,7 +179,7 @@ En este nivel se muestra Monis‑Torías como un sistema que interactúa con:
 
 **Diagrama de contenedores:**
 
-![Contenedores C4](./diagramasPNG/Imagen%20de%20WhatsApp%202025-11-23%20a%20las%2014.04.00_4089b20d.jpg)
+![Contenedores C4](./diagramasPNG/contenedores.jpg)
 
 Se identifican los principales contenedores lógicos:
 
@@ -195,7 +193,7 @@ Se identifican los principales contenedores lógicos:
 
 **Diagrama de componentes:**
 
-![Componentes C4](./diagramasPNG/Imagen%20de%20WhatsApp%202025-11-23%20a%20las%2014.04.00_e0e459a4.jpg)
+![Componentes C4](./diagramasPNG/componentes.jpg)
 
 En el backend, el contenedor de API se divide conceptualmente en:
 
@@ -210,7 +208,7 @@ En el frontend, la aplicación se compone de páginas (como `LoginPage`, `Sessio
 
 **Diagrama de código (módulo de sesiones):**
 
-![Código C4 – Sessions](./diagramasPNG/Imagen%20de%20WhatsApp%202025-11-23%20a%20las%2014.04.00_e9d651dc.jpg)
+![Código C4 – Sessions](./diagramasPNG/codigo.jpg)
 
 Este nivel muestra cómo se estructura internamente el módulo de sesiones, con clases y/o funciones como:
 
@@ -294,7 +292,8 @@ Esta sección resume cómo se atienden los criterios de calidad y aseguramiento 
 
 - **Reporte OWASP ZAP (DAST)**
 
-   ![Reporte OWASP ZAP](./diagramasPNG/security-zap.png)
+   ![Reporte OWASP ZAP](./pruebas/ZAP%201.png)
+   ![Reporte OWASP ZAP](./pruebas/ZAP%202.png)
 
 - **Resultado de npm audit (dependency scanning)**
 
@@ -306,7 +305,7 @@ Esta sección resume cómo se atienden los criterios de calidad y aseguramiento 
 
 - **Resultado de Trivy sobre imagen Docker**
 
-   ![Trivy](./diagramasPNG/security-trivy.png)
+   ![Trivy](./pruebas/Trivy.png)
 
 ---
 
